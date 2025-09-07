@@ -6,11 +6,11 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonParseException;
 import com.mojang.serialization.JsonOps;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.SimpleJsonResourceReloadListener;
 import net.minecraft.util.profiling.ProfilerFiller;
-import net.minecraftforge.fml.ModList;
-import net.minecraftforge.network.PacketDistributor;
+import net.neoforged.fml.ModList;
 import org.jetbrains.annotations.NotNull;
 import sfiomn.legendarysurvivaloverhaul.LegendarySurvivalOverhaul;
 import sfiomn.legendarysurvivaloverhaul.api.data.json.JsonTemperatureConsumable;
@@ -37,7 +37,10 @@ public class TemperatureConsumableListener extends SimpleJsonResourceReloadListe
         resourceLocationJsonElementMap.forEach((key, json) -> {
             try {
                 var parsedJson = JsonTemperatureConsumable.LIST_CODEC.parse(JsonOps.INSTANCE, json);
-                List<JsonTemperatureConsumable> temperatures = parsedJson.getOrThrow(false, error -> LegendarySurvivalOverhaul.LOGGER.error("Failed parsing temperature consumable : {}", error));
+                List<JsonTemperatureConsumable> temperatures = parsedJson.getOrThrow(error -> {
+                    LegendarySurvivalOverhaul.LOGGER.error("Failed parsing temperature consumable : {}", error);
+                    return new RuntimeException(error);
+                });
                 if (ModList.get().isLoaded(key.getNamespace()))
                     TEMPERATURE_CONSUMABLES.put(key, temperatures);
             } catch (JsonParseException error) {
@@ -48,7 +51,7 @@ public class TemperatureConsumableListener extends SimpleJsonResourceReloadListe
         LegendarySurvivalOverhaul.LOGGER.info("Loaded {} temperature consumables", TEMPERATURE_CONSUMABLES.size());
     }
 
-    public static void sendDataToClient(PacketDistributor.PacketTarget packetTarget) {
+    public static void sendDataToClient(ServerPlayer packetTarget) {
         SyncTemperatureConsumablesPacket.sendTo(packetTarget, TEMPERATURE_CONSUMABLES);
     }
 

@@ -1,6 +1,7 @@
 package sfiomn.legendarysurvivaloverhaul.common.events;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -15,29 +16,36 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.EquipmentSlotGroup;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.LevelData;
 import net.minecraft.world.level.storage.PrimaryLevelData;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.common.ForgeMod;
-import net.minecraftforge.event.ItemAttributeModifierEvent;
-import net.minecraftforge.event.OnDatapackSyncEvent;
-import net.minecraftforge.event.entity.living.*;
-import net.minecraftforge.event.entity.player.*;
-import net.minecraftforge.event.level.BlockEvent;
-import net.minecraftforge.event.level.LevelEvent;
-import net.minecraftforge.event.level.SleepFinishedTimeEvent;
-import net.minecraftforge.eventbus.api.Event;
-import net.minecraftforge.eventbus.api.EventPriority;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.loading.FMLEnvironment;
-import net.minecraftforge.network.PacketDistributor;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.api.distmarker.Dist;
+
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.client.resources.NeoForgeSplashHooks;
+import net.neoforged.neoforge.common.damagesource.DamageContainer;
+import net.neoforged.neoforge.event.EventHooks;
+import net.neoforged.neoforge.event.ItemAttributeModifierEvent;
+import net.neoforged.neoforge.event.OnDatapackSyncEvent;
+import net.neoforged.neoforge.event.entity.living.*;
+import net.neoforged.neoforge.event.entity.player.*;
+import net.neoforged.neoforge.event.level.BlockEvent;
+import net.neoforged.neoforge.event.level.LevelEvent;
+import net.neoforged.neoforge.event.level.SleepFinishedTimeEvent;
+import net.neoforged.bus.api.Event;
+import net.neoforged.bus.api.EventPriority;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.loading.FMLEnvironment;
+
+import net.neoforged.neoforge.event.entity.living.LivingEntityUseItemEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import sfiomn.legendarysurvivaloverhaul.LegendarySurvivalOverhaul;
 import sfiomn.legendarysurvivaloverhaul.api.ModDamageTypes;
 import sfiomn.legendarysurvivaloverhaul.api.bodydamage.BodyDamageUtil;
@@ -75,7 +83,7 @@ import static sfiomn.legendarysurvivaloverhaul.util.internal.TemperatureUtilInte
 import static sfiomn.legendarysurvivaloverhaul.util.internal.TemperatureUtilInternal.equipmentSlotTemperatureUuid;
 
 
-@Mod.EventBusSubscriber(modid = LegendarySurvivalOverhaul.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
+@EventBusSubscriber(modid = LegendarySurvivalOverhaul.MOD_ID, bus = EventBusSubscriber.Bus.GAME)
 public class CommonForgeEvents {
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
@@ -91,11 +99,11 @@ public class CommonForgeEvents {
             if (itemStackInBasket != ItemStack.EMPTY)
                 usedItemStack = itemStackInBasket;
         }
-        ResourceLocation itemRegistryName = ForgeRegistries.ITEMS.getKey(usedItemStack.getItem());
+        ResourceLocation itemRegistryName = BuiltInRegistries.ITEM.getKey(usedItemStack.getItem());
 
         if (LegendarySurvivalOverhaul.medsandherbsLoaded
                 && itemRegistryName != null && itemRegistryName.getNamespace().equals("meds_and_herbs")) {
-            if(itemRegistryName.equals(new ResourceLocation("meds_and_herbs", "syringe_morphine"))) {
+            if(itemRegistryName.equals(ResourceLocation.fromNamespaceAndPath("meds_and_herbs", "syringe_morphine"))) {
                 if (!MedsAndHerbsUtil.triggerMorphineBehavior(player)) {
                     event.setCanceled(true);
                     event.setCancellationResult(InteractionResult.CONSUME);
@@ -120,7 +128,7 @@ public class CommonForgeEvents {
         }
 
         if (!entity.level().isClientSide) {
-            ResourceLocation itemRegistryName = ForgeRegistries.ITEMS.getKey(usedItemStack.getItem());
+            ResourceLocation itemRegistryName = BuiltInRegistries.ITEM.getKey(usedItemStack.getItem());
             TemperatureUtil.applyConsumableTemperature(player, itemRegistryName);
         }
 
@@ -148,8 +156,8 @@ public class CommonForgeEvents {
                     if (hasMenu)
                         return;
 
-                    JsonThirstBlock jsonBlockThirst = ThirstUtil.getBlockThirstLookedAt(player, player.getAttributeValue(ForgeMod.BLOCK_REACH.get()) / 2);
-                    JsonThirstBlock jsonFluidThirst = ThirstUtil.getFluidThirstLookedAt(player, player.getAttributeValue(ForgeMod.BLOCK_REACH.get()) / 2);
+                    JsonThirstBlock jsonBlockThirst = ThirstUtil.getBlockThirstLookedAt(player, player.blockInteractionRange() / 2);
+                    JsonThirstBlock jsonFluidThirst = ThirstUtil.getFluidThirstLookedAt(player, player.blockInteractionRange() / 2);
 
                     //  If we can drink on a block, cancel its use except if crouching
                     if (jsonBlockThirst != null && (jsonBlockThirst.hydration != 0 || jsonBlockThirst.saturation != 0) && !event.getEntity().isCrouching()) {
@@ -195,60 +203,67 @@ public class CommonForgeEvents {
         if (FMLEnvironment.dist == Dist.CLIENT)
             if(Minecraft.getInstance().level == null) return;
 
-        if (ItemUtil.canBeEquippedInSlot(event.getItemStack(), event.getSlotType())) {
-
-            if (Config.Baked.temperatureEnabled) {
-                JsonTemperatureResistance config = new JsonTemperatureResistance();
-                for (AttributeModifierBase attributeModifier : ITEM_ATTRIBUTE_MODIFIERS_REGISTRY.get().getValues()) {
-                    config.add(attributeModifier.getItemAttributes(event.getItemStack()));
-                }
-
-                UUID modifierUuid = equipmentSlotTemperatureUuid.get(event.getSlotType());
-
-                if (config.temperature != 0) {
-                    HEATING_TEMPERATURE.addModifier(event, modifierUuid, Math.max(config.temperature, 0));
-                    COOLING_TEMPERATURE.addModifier(event, modifierUuid, Math.min(config.temperature, 0));
-                }
-
-                if (config.heatResistance != 0)
-                    HEAT_RESISTANCE.addModifier(event, modifierUuid, config.heatResistance);
-
-                if (config.coldResistance != 0)
-                    COLD_RESISTANCE.addModifier(event, modifierUuid, config.coldResistance);
-
-                if (config.thermalResistance != 0)
-                    THERMAL_RESISTANCE.addModifier(event, modifierUuid, config.thermalResistance);
+        for (ItemAttributeModifiers.Entry entry : event.getModifiers()) {
+            ItemStack itemStack = event.getItemStack();
+            EquipmentSlot equipmentSlot = itemStack.getEquipmentSlot();
+            if (equipmentSlot == null) {
+                continue;
             }
+            if (entry.slot().test(equipmentSlot)) {
 
-            if ((Config.Baked.localizedBodyDamageEnabled)) {
-                ResourceLocation itemRegistryName = ForgeRegistries.ITEMS.getKey(event.getItemStack().getItem());
-                JsonBodyPartResistance config = BodyDamageDataManager.getBodyResistanceItem(itemRegistryName);
+                if (Config.Baked.temperatureEnabled) {
+                    JsonTemperatureResistance config = new JsonTemperatureResistance();
+                    for (AttributeModifierBase attributeModifier : ITEM_ATTRIBUTE_MODIFIERS_REGISTRY) {
+                        config.add(attributeModifier.getItemAttributes(event.getItemStack()));
+                    }
 
-                if (itemRegistryName == null || config == null)
-                    return;
+                    ResourceLocation modifierUuid = equipmentSlotTemperatureUuid.get(equipmentSlot);
 
-                UUID modifierUuid = equipmentSlotBodyResistanceUuid.get(event.getSlotType());
+                    if (config.temperature != 0) {
+                        HEATING_TEMPERATURE.addModifier(event, modifierUuid, entry.slot(), Math.max(config.temperature, 0));
+                        COOLING_TEMPERATURE.addModifier(event, modifierUuid, entry.slot(), Math.min(config.temperature, 0));
+                    }
 
-                if (config.bodyResistance != 0)
-                    BODY_RESISTANCE.addModifier(event, modifierUuid, config.bodyResistance);
+                    if (config.heatResistance != 0)
+                        HEAT_RESISTANCE.addModifier(event, modifierUuid, entry.slot(), config.heatResistance);
 
-                if (config.headResistance != 0)
-                    HEAD_RESISTANCE.addModifier(event, modifierUuid, config.headResistance);
+                    if (config.coldResistance != 0)
+                        COLD_RESISTANCE.addModifier(event, modifierUuid, entry.slot(), config.coldResistance);
 
-                if (config.chestResistance != 0)
-                    CHEST_RESISTANCE.addModifier(event, modifierUuid, config.chestResistance);
+                    if (config.thermalResistance != 0)
+                        THERMAL_RESISTANCE.addModifier(event, modifierUuid, entry.slot(), config.thermalResistance);
+                }
 
-                if (config.rightArmResistance != 0)
-                    RIGHT_ARM_RESISTANCE.addModifier(event, modifierUuid, config.rightArmResistance);
+                if ((Config.Baked.localizedBodyDamageEnabled)) {
+                    ResourceLocation itemRegistryName = BuiltInRegistries.ITEM.getKey(event.getItemStack().getItem());
+                    JsonBodyPartResistance config = BodyDamageDataManager.getBodyResistanceItem(itemRegistryName);
 
-                if (config.leftArmResistance != 0)
-                    LEFT_ARM_RESISTANCE.addModifier(event, modifierUuid, config.leftArmResistance);
+                    if (itemRegistryName == null || config == null)
+                        return;
 
-                if (config.legsResistance != 0)
-                    LEGS_RESISTANCE.addModifier(event, modifierUuid, config.legsResistance);
+                    ResourceLocation modifierUuid = equipmentSlotBodyResistanceUuid.get(equipmentSlot);
 
-                if (config.feetResistance != 0)
-                    FEET_RESISTANCE.addModifier(event, modifierUuid, config.feetResistance);
+                    if (config.bodyResistance != 0)
+                        BODY_RESISTANCE.addModifier(event, modifierUuid, entry.slot(), config.bodyResistance);
+
+                    if (config.headResistance != 0)
+                        HEAD_RESISTANCE.addModifier(event, modifierUuid, entry.slot(), config.headResistance);
+
+                    if (config.chestResistance != 0)
+                        CHEST_RESISTANCE.addModifier(event, modifierUuid, entry.slot(), config.chestResistance);
+
+                    if (config.rightArmResistance != 0)
+                        RIGHT_ARM_RESISTANCE.addModifier(event, modifierUuid, entry.slot(), config.rightArmResistance);
+
+                    if (config.leftArmResistance != 0)
+                        LEFT_ARM_RESISTANCE.addModifier(event, modifierUuid, entry.slot(), config.leftArmResistance);
+
+                    if (config.legsResistance != 0)
+                        LEGS_RESISTANCE.addModifier(event, modifierUuid, entry.slot(), config.legsResistance);
+
+                    if (config.feetResistance != 0)
+                        FEET_RESISTANCE.addModifier(event, modifierUuid, entry.slot(), config.feetResistance);
+                }
             }
         }
     }
@@ -282,26 +297,26 @@ public class CommonForgeEvents {
     }
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
-    public static void onEntityHurt(LivingHurtEvent event) {
+    public static void onEntityHurt(LivingIncomingDamageEvent event) {
         if (!event.getSource().is(DamageTypes.FALL) &&
             !event.getSource().is(DamageTypes.STARVE) &&
             !event.getSource().is(DamageTypes.FREEZE) &&
             !event.getSource().is(DamageTypes.DROWN) &&
             !event.getSource().is(ModDamageTypes.DEHYDRATION) &&
             !event.getSource().is(ModDamageTypes.HYPOTHERMIA) &&
-            !event.getSource().is(ModDamageTypes.HYPERTHERMIA) && event.getEntity().hasEffect(MobEffectRegistry.VULNERABILITY.get())) {
+            !event.getSource().is(ModDamageTypes.HYPERTHERMIA) && event.getEntity().hasEffect(MobEffectRegistry.VULNERABILITY)) {
 
-            event.setAmount(event.getAmount() * (1 + 0.2f * Objects.requireNonNull(event.getEntity().getEffect(MobEffectRegistry.VULNERABILITY.get())).getAmplifier() + 1));
+            event.setAmount(event.getAmount() * (1 + 0.2f * Objects.requireNonNull(event.getEntity().getEffect(MobEffectRegistry.VULNERABILITY)).getAmplifier() + 1));
 
-        } else if (event.getSource().is(DamageTypes.FALL) && event.getEntity().hasEffect(MobEffectRegistry.HARD_FALLING.get())) {
+        } else if (event.getSource().is(DamageTypes.FALL) && event.getEntity().hasEffect(MobEffectRegistry.HARD_FALLING)) {
 
-            event.setAmount(event.getAmount() * (1 + 0.2f * Objects.requireNonNull(event.getEntity().getEffect(MobEffectRegistry.HARD_FALLING.get())).getAmplifier() + 1));
+            event.setAmount(event.getAmount() * (1 + 0.2f * Objects.requireNonNull(event.getEntity().getEffect(MobEffectRegistry.HARD_FALLING)).getAmplifier() + 1));
             event.getEntity().level().playSound(null, event.getEntity(), SoundRegistry.HARD_FALLING_HURT.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
         }
     }
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
-    public static void onEntityHurtDamage(LivingDamageEvent event) {
+    public static void onEntityHurtDamage(LivingDamageEvent.Pre event) {
         Player player;
         if (event.getEntity() instanceof Player)
             player = (Player) event.getEntity();
@@ -310,11 +325,15 @@ public class CommonForgeEvents {
         if (player.level().isClientSide)
             return;
 
-        if (shouldApplyHealthOverhaul(player))
-            event.setAmount(HealthUtil.hurtPlayer(player, event.getAmount()));
+        DamageContainer container = event.getContainer();
+
+        if (shouldApplyHealthOverhaul(player)) {
+            float armor = event.getContainer().getReduction(DamageContainer.Reduction.ARMOR);
+            container.setReduction(DamageContainer.Reduction.ARMOR, HealthUtil.hurtPlayer(player, armor));
+        }
 
         if (shouldApplyLocalizedBodyDamage(player)) {
-            float bodyPartDamageValue = event.getAmount() * (float) Config.Baked.bodyDamageMultiplier;
+            float bodyPartDamageValue = event.getNewDamage() * (float) Config.Baked.bodyDamageMultiplier;
             DamageSource source = event.getSource();
 
             JsonBodyPartsDamageSource damageSourceBodyParts = BodyDamageDataManager.getBodyParts(source.getMsgId());
@@ -349,7 +368,7 @@ public class CommonForgeEvents {
                     && hitBodyParts.contains(BodyPartEnum.HEAD)
                     && Config.Baked.headCriticalShotMultiplier > 1
                     && player.getItemBySlot(EquipmentSlot.HEAD).isEmpty()) {
-                event.setAmount(event.getAmount() * (float) Config.Baked.headCriticalShotMultiplier);
+                event.setNewDamage(event.getNewDamage() * (float) Config.Baked.headCriticalShotMultiplier);
                 player.level().playLocalSound(player.blockPosition(), SoundRegistry.HEADSHOT.get(), SoundSource.HOSTILE, 1.0F, 1.0F, false);
             }
         }
@@ -387,11 +406,11 @@ public class CommonForgeEvents {
                 HealthCapability healthCapability = CapabilityUtil.getHealthCapability(player);
                 healthCapability.addShieldHealth(2);
 
-                event.setResult(Event.Result.DENY);
+                event.setResult(MobEffectEvent.Applicable.Result.DO_NOT_APPLY);
             }
             if (event.getEffectInstance().getEffect() == MobEffectRegistry.THIRST.get() &&
                     CuriosUtil.isCurioItemEquipped(player, ItemRegistry.WATER_PURIFIER.get())) {
-                event.setResult(Event.Result.DENY);
+                event.setResult(MobEffectEvent.Applicable.Result.DO_NOT_APPLY);
             }
         }
     }
@@ -402,7 +421,7 @@ public class CommonForgeEvents {
             return;
 
         if (Config.Baked.temperatureImmunityOnDeathEnabled && Config.Baked.temperatureEnabled) {
-            event.getEntity().addEffect(new MobEffectInstance(MobEffectRegistry.TEMPERATURE_IMMUNITY.get(), Config.Baked.temperatureImmunityOnDeathTime, 0, false, false, true));
+            event.getEntity().addEffect(new MobEffectInstance(MobEffectRegistry.TEMPERATURE_IMMUNITY, Config.Baked.temperatureImmunityOnDeathTime, 0, false, false, true));
         }
     }
 
@@ -410,7 +429,7 @@ public class CommonForgeEvents {
     public static void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
         if (Config.Baked.temperatureImmunityOnFirstSpawnEnabled && Config.Baked.temperatureEnabled && !event.getEntity().getPersistentData().getBoolean("tempImmuneOnSpawn")) {
             event.getEntity().getPersistentData().putBoolean("tempImmuneOnSpawn", true);
-            event.getEntity().addEffect(new MobEffectInstance(MobEffectRegistry.TEMPERATURE_IMMUNITY.get(), Config.Baked.temperatureImmunityOnFirstSpawnTime, 0, false, false, true));
+            event.getEntity().addEffect(new MobEffectInstance(MobEffectRegistry.TEMPERATURE_IMMUNITY, Config.Baked.temperatureImmunityOnFirstSpawnTime, 0, false, false, true));
         }
 
         if (Config.Baked.healthOverhaulEnabled) {
@@ -434,23 +453,26 @@ public class CommonForgeEvents {
     @SubscribeEvent
     public static void onDataPackSyncEvent(OnDatapackSyncEvent event) {
         final ServerPlayer player = event.getPlayer();
-        final PacketDistributor.PacketTarget target = player == null ? PacketDistributor.ALL.noArg() : PacketDistributor.PLAYER.with(() -> player);
 
-        ThirstBlockListener.sendDataToClient(target);
-        ThirstConsumableListener.sendDataToClient(target);
+        List<ServerPlayer> players = player == null ? event.getPlayerList().getPlayers() : Collections.singletonList(player);
+        for (ServerPlayer target : players) {
+            ThirstBlockListener.sendDataToClient(target);
+            ThirstConsumableListener.sendDataToClient(target);
 
-        TemperatureBiomeListener.sendDataToClient(target);
-        TemperatureBlockListener.sendDataToClient(target);
-        TemperatureConsumableListener.sendDataToClient(target);
-        TemperatureDimensionListener.sendDataToClient(target);
-        TemperatureFuelItemListener.sendDataToClient(target);
-        TemperatureItemListener.sendDataToClient(target);
-        TemperatureMountListener.sendDataToClient(target);
-        TemperatureOriginListener.sendDataToClient(target);
+            TemperatureBiomeListener.sendDataToClient(target);
+            TemperatureBlockListener.sendDataToClient(target);
+            TemperatureConsumableListener.sendDataToClient(target);
+            TemperatureDimensionListener.sendDataToClient(target);
+            TemperatureFuelItemListener.sendDataToClient(target);
+            TemperatureItemListener.sendDataToClient(target);
+            TemperatureMountListener.sendDataToClient(target);
+            TemperatureOriginListener.sendDataToClient(target);
 
-        BodyDamageHealingConsumableListener.sendDataToClient(target);
-        BodyPartsDamageSourceListener.sendDataToClient(target);
-        BodyPartResistanceItemListener.sendDataToClient(target);
+            BodyDamageHealingConsumableListener.sendDataToClient(target);
+            BodyPartsDamageSourceListener.sendDataToClient(target);
+            BodyPartResistanceItemListener.sendDataToClient(target);
+        }
+
     }
 
     private static boolean shouldApplyThirst(Player player)

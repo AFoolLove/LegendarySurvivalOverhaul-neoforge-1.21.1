@@ -3,11 +3,14 @@ package sfiomn.legendarysurvivaloverhaul.network.packets;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.network.NetworkEvent;
-import net.minecraftforge.network.PacketDistributor;
+import net.minecraft.server.level.ServerPlayer;
+import net.neoforged.neoforge.network.PacketDistributor;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
+import org.jetbrains.annotations.NotNull;
+import sfiomn.legendarysurvivaloverhaul.LegendarySurvivalOverhaul;
 import sfiomn.legendarysurvivaloverhaul.api.data.json.JsonTemperatureFuelItem;
 import sfiomn.legendarysurvivaloverhaul.common.listeners.TemperatureFuelItemListener;
 import sfiomn.legendarysurvivaloverhaul.network.NetworkHandler;
@@ -16,8 +19,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
 
-public class SyncTemperatureFuelItemsPacket
+public class SyncTemperatureFuelItemsPacket implements CustomPacketPayload
 {
+	public static final Type<SyncTemperatureFuelItemsPacket> TYPE = new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(LegendarySurvivalOverhaul.MOD_ID, "sync_temperature_fuel_items"));
+	public static final StreamCodec<FriendlyByteBuf, SyncTemperatureFuelItemsPacket> STREAM_CODEC =
+			CustomPacketPayload.codec(SyncTemperatureFuelItemsPacket::encode, SyncTemperatureFuelItemsPacket::decode);
+
 	private final Map<ResourceLocation, JsonTemperatureFuelItem> temperatureFuelItems;
 	private final int size;
 
@@ -25,6 +32,11 @@ public class SyncTemperatureFuelItemsPacket
 	{
 		this.temperatureFuelItems = Map.copyOf(temperatureFuelItems);
 		this.size = temperatureFuelItems.size();
+	}
+
+	@Override
+	public @NotNull Type<? extends CustomPacketPayload> type() {
+		return TYPE;
 	}
 
 	public static void encode(SyncTemperatureFuelItemsPacket message, FriendlyByteBuf buffer)
@@ -53,29 +65,16 @@ public class SyncTemperatureFuelItemsPacket
 		return new SyncTemperatureFuelItemsPacket(temperatureFuelItems);
 	}
 	
-	public static void handle(SyncTemperatureFuelItemsPacket message, Supplier<NetworkEvent.Context> supplier)
+	public static void handle(SyncTemperatureFuelItemsPacket message, IPayloadContext context)
 	{
-		final NetworkEvent.Context context = supplier.get();
-		context.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> syncTemperatureFuelItems(message.temperatureFuelItems)));
-		
-		supplier.get().setPacketHandled(true);
+		if (context.flow().isClientbound()) {
+			context.enqueueWork(() -> {
+				TemperatureFuelItemListener.acceptServerTemperatureFuelItems(message.temperatureFuelItems);
+			});
+		}
 	}
 
-	public static DistExecutor.SafeRunnable syncTemperatureFuelItems(Map<ResourceLocation, JsonTemperatureFuelItem> temperatureFuelItems)
-	{
-		return new DistExecutor.SafeRunnable()
-		{
-			private static final long serialVersionUID = 1L;
-
-			@Override
-			public void run()
-			{
-				TemperatureFuelItemListener.acceptServerTemperatureFuelItems(temperatureFuelItems);
-			}
-		};
-	}
-
-	public static void sendTo(PacketDistributor.PacketTarget packetDistributor, Map<ResourceLocation, JsonTemperatureFuelItem> temperatureFuelItems) {
-		NetworkHandler.INSTANCE.send(packetDistributor, new SyncTemperatureFuelItemsPacket(temperatureFuelItems));
+	public static void sendTo(ServerPlayer player, Map<ResourceLocation, JsonTemperatureFuelItem> temperatureFuelItems) {
+		PacketDistributor.sendToPlayer(player, new SyncTemperatureFuelItemsPacket(temperatureFuelItems));
 	}
 }

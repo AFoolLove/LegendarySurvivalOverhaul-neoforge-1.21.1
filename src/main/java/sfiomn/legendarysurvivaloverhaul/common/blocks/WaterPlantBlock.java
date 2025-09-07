@@ -2,6 +2,7 @@ package sfiomn.legendarysurvivaloverhaul.common.blocks;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.player.Player;
@@ -24,13 +25,12 @@ import net.minecraft.world.level.material.PushReaction;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraftforge.common.IPlantable;
-import net.minecraftforge.common.PlantType;
-import net.minecraftforge.common.Tags;
+import net.neoforged.neoforge.client.resources.NeoForgeSplashHooks;
+import net.neoforged.neoforge.common.CommonHooks;
 import org.jetbrains.annotations.NotNull;
 import sfiomn.legendarysurvivaloverhaul.registry.ItemRegistry;
 
-public class WaterPlantBlock extends CropBlock implements IPlantable {
+public class WaterPlantBlock extends CropBlock {
     public static final EnumProperty<DoubleBlockHalf> HALF = BlockStateProperties.DOUBLE_BLOCK_HALF;
 
     public static final int MAX_AGE = 7;
@@ -70,13 +70,13 @@ public class WaterPlantBlock extends CropBlock implements IPlantable {
         if (level.getRawBrightness(pos, 0) >= 9 && !this.isUpperBlock(state)) {
             int age = this.getAge(state);
             if (canGrow(level, state, pos)) {
-                float f = getGrowthSpeed(this, level, pos);
-                if (net.minecraftforge.common.ForgeHooks.onCropsGrowPre(level, pos, state, random.nextInt((int)(25.0F / f) + 1) == 0)) {
+                float f = getGrowthSpeed(state, level, pos);
+                if (CommonHooks.canCropGrow(level, pos, state, random.nextInt((int)(25.0F / f) + 1) == 0)) {
                     level.setBlock(pos, this.getStateForAge(age + 1), 2);
                     if (this.getAge(state) > this.getMaxAge() / 2) {
                         level.setBlock(pos.above(), this.getStateForAge(age + 1).setValue(HALF, DoubleBlockHalf.UPPER), 2);
                     }
-                    net.minecraftforge.common.ForgeHooks.onCropsGrowPost(level, pos, state);
+                    CommonHooks.fireCropGrowPost(level, pos, state);
                 }
             }
         }
@@ -141,7 +141,7 @@ public class WaterPlantBlock extends CropBlock implements IPlantable {
 
     @Override
     protected boolean mayPlaceOn(BlockState blockState, BlockGetter blockReader, BlockPos blockPos) {
-        return blockState.is(Tags.Blocks.SAND);
+        return blockState.is(BlockTags.SAND);
     }
 
     @Override
@@ -154,17 +154,7 @@ public class WaterPlantBlock extends CropBlock implements IPlantable {
     }
 
     @Override
-    public PlantType getPlantType(BlockGetter world, BlockPos pos) {
-        return PlantType.DESERT;
-    }
-
-    @Override
-    public BlockState getPlant(BlockGetter world, BlockPos pos) {
-        return defaultBlockState();
-    }
-
-    @Override
-    public void playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
+    public BlockState playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
         if (!level.isClientSide) {
             if (isUpperBlock(state)) {
                 if (level.getBlockState(pos.below()).is(this))
@@ -177,7 +167,7 @@ public class WaterPlantBlock extends CropBlock implements IPlantable {
             }
         }
 
-        super.playerWillDestroy(level, pos, state, player);
+        return super.playerWillDestroy(level, pos, state, player);
     }
 
     @Override
@@ -186,7 +176,7 @@ public class WaterPlantBlock extends CropBlock implements IPlantable {
     }
 
     @Override
-    public boolean isValidBonemealTarget(@NotNull LevelReader level, @NotNull BlockPos pos, @NotNull BlockState state, boolean isClient) {
+    public boolean isValidBonemealTarget(@NotNull LevelReader level, @NotNull BlockPos pos, @NotNull BlockState state) {
         if (canGrow((Level) level, state, pos)) {
             return state.getBlock() == this;
         }

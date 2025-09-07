@@ -1,14 +1,15 @@
 package sfiomn.legendarysurvivaloverhaul.api.config.json_old.temperature;
 
 import net.minecraft.world.effect.MobEffect;
-import net.minecraftforge.registries.RegistryObject;
+import net.neoforged.neoforge.registries.DeferredHolder;
 import sfiomn.legendarysurvivaloverhaul.api.temperature.TemporaryModifierGroupEnum;
 
 /**
  * Code taken and adapted from Charles445's SimpleDifficulty mod
- * @see <a href="https://github.com/Charles445/SimpleDifficulty/tree/master/src/main/java/com/charles445/simpledifficulty/api/config/json">Github Link</a>
+ *
  * @author Charles445
  * @author Icey
+ * @see <a href="https://github.com/Charles445/SimpleDifficulty/tree/master/src/main/java/com/charles445/simpledifficulty/api/config/json">Github Link</a>
  */
 
 public class JsonConsumableTemperature
@@ -16,8 +17,8 @@ public class JsonConsumableTemperature
 	public TemporaryModifierGroupEnum group;
 	public int temperatureLevel;
 	public int duration;
-	private RegistryObject<MobEffect> effect;
-	private RegistryObject<MobEffect> oppositeEffect;
+	private DeferredHolder<MobEffect, MobEffect> effect;
+	private DeferredHolder<MobEffect, MobEffect> oppositeEffect;
 	
 	public JsonConsumableTemperature(TemporaryModifierGroupEnum group, int temperatureLevel, int duration)
 	{

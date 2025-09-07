@@ -2,7 +2,9 @@ package sfiomn.legendarysurvivaloverhaul.api.bodydamage;
 
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.event.TickEvent;
+import net.neoforged.neoforge.capabilities.ICapabilityProvider;
+import net.neoforged.neoforge.event.tick.PlayerTickEvent;
+import sfiomn.legendarysurvivaloverhaul.common.capabilities.bodydamage.BodyDamageCapability;
 
 public interface IBodyDamageCapability
 {
@@ -76,5 +78,5 @@ public interface IBodyDamageCapability
 	 * @param world
 	 * @param phase
 	 */
-	public void tickUpdate(Player player, Level world, TickEvent.Phase phase);
+	public void tickUpdate(Player player, Level world, PlayerTickEvent phase);
 }

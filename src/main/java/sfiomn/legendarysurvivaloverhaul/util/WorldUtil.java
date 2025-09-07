@@ -64,8 +64,8 @@ public final class WorldUtil
 
 	public static boolean isPlayerOrPosUndercover(Level level, Player player, BlockPos pos) {
 		if (LegendarySurvivalOverhaul.beachpartyLoaded)
-			if (BeachpartyUtil.isUnderParasol(level, player, pos))
-				return true;
+//			if (BeachpartyUtil.isUnderParasol(level, player, pos))
+//				return true;
 
 		if (LegendarySurvivalOverhaul.artifactsLoaded)
 			if (ArtifactsUtil.isHoldingUmbrella(player))
@@ -84,7 +84,7 @@ public final class WorldUtil
 		if (!level.isRaining())
 			return Biome.Precipitation.NONE;
 
-		return level.getBiome(pos).get().getPrecipitationAt(pos);
+		return level.getBiome(pos).value().getPrecipitationAt(pos);
 	}
 
 	public static boolean isRainingOrSnowingAt(Level level, BlockPos pos) {

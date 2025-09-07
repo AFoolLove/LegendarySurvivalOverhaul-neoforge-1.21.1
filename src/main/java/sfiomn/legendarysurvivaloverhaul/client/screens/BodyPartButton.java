@@ -8,7 +8,7 @@ import sfiomn.legendarysurvivaloverhaul.LegendarySurvivalOverhaul;
 import sfiomn.legendarysurvivaloverhaul.api.bodydamage.BodyPartEnum;
 
 public class BodyPartButton extends Button {
-    public static final ResourceLocation BODY_PARTS_SCREEN = new ResourceLocation(LegendarySurvivalOverhaul.MOD_ID, "textures/gui/body_parts_screen.png");
+    public static final ResourceLocation BODY_PARTS_SCREEN = ResourceLocation.fromNamespaceAndPath(LegendarySurvivalOverhaul.MOD_ID, "textures/gui/body_parts_screen.png");
     public BodyPartEnum bodyPart;
     public boolean isPressed;
     private float healthRatio;

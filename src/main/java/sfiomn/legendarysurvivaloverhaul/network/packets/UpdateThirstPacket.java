@@ -5,10 +5,17 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.network.NetworkEvent;
-import net.minecraftforge.network.PacketDistributor;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.network.PacketDistributor;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
+import org.jetbrains.annotations.NotNull;
+import sfiomn.legendarysurvivaloverhaul.LegendarySurvivalOverhaul;
+import sfiomn.legendarysurvivaloverhaul.common.capabilities.ModCapabilities;
 import sfiomn.legendarysurvivaloverhaul.common.capabilities.thirst.ThirstCapability;
 import sfiomn.legendarysurvivaloverhaul.common.capabilities.thirst.ThirstProvider;
 import sfiomn.legendarysurvivaloverhaul.network.NetworkHandler;
@@ -16,8 +23,12 @@ import sfiomn.legendarysurvivaloverhaul.util.CapabilityUtil;
 
 import java.util.function.Supplier;
 
-public class UpdateThirstPacket
+public class UpdateThirstPacket implements CustomPacketPayload
 {
+	public static final Type<UpdateThirstPacket> TYPE = new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(LegendarySurvivalOverhaul.MOD_ID, "update_thirst"));
+	public static final StreamCodec<FriendlyByteBuf, UpdateThirstPacket> STREAM_CODEC =
+			CustomPacketPayload.codec(UpdateThirstPacket::encode, UpdateThirstPacket::decode);
+
 	private CompoundTag compound;
 
 	public UpdateThirstPacket(Tag compound)
@@ -26,6 +37,11 @@ public class UpdateThirstPacket
 	}
 
 	public UpdateThirstPacket() {}
+
+	@Override
+	public @NotNull Type<? extends CustomPacketPayload> type() {
+		return TYPE;
+	}
 
 	public static void encode(UpdateThirstPacket message, FriendlyByteBuf buffer)
 	{
@@ -37,35 +53,24 @@ public class UpdateThirstPacket
 		return new UpdateThirstPacket(buffer.readNbt());
 	}
 	
-	public static void handle(UpdateThirstPacket message, Supplier<NetworkEvent.Context> supplier)
+	public static void handle(UpdateThirstPacket message, IPayloadContext context)
 	{
-		final NetworkEvent.Context context = supplier.get();
-		context.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> syncThirst(message.compound)));
-		
-		supplier.get().setPacketHandled(true);
-	}
-	
-	public static DistExecutor.SafeRunnable syncThirst(CompoundTag compound)
-	{
-		return new DistExecutor.SafeRunnable()
-		{
-			private static final long serialVersionUID = 1L;
-			
-			@Override
-			public void run()
-			{
-				LocalPlayer player = Minecraft.getInstance().player;
-
-				if (player != null) {
-					ThirstCapability thirst = CapabilityUtil.getThirstCapability(player);
-
-					thirst.readNBT(compound);
-				}
-			}
-		};
+		if (context.flow().isClientbound()) {
+			context.enqueueWork(() -> handle(message));
+		}
 	}
 
-	public static void sendTo(PacketDistributor.PacketTarget packetDistributor, Tag compound) {
-		NetworkHandler.INSTANCE.send(packetDistributor, new UpdateThirstPacket(compound));
+	@OnlyIn(Dist.CLIENT)
+	private static void handle(UpdateThirstPacket message) {
+		LocalPlayer player = Minecraft.getInstance().player;
+
+		if (player != null) {
+			ThirstCapability thirst = CapabilityUtil.getThirstCapability(player);
+			thirst.readNBT(message.compound);
+		}
+	}
+
+	public static void sendTo(ServerPlayer player, Tag compound) {
+		PacketDistributor.sendToPlayer(player, new UpdateThirstPacket(compound));
 	}
 }

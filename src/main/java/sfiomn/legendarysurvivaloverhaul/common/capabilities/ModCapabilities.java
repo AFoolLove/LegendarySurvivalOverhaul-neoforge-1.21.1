@@ -2,20 +2,21 @@ package sfiomn.legendarysurvivaloverhaul.common.capabilities;
 
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.event.AttachCapabilitiesEvent;
-import net.minecraftforge.event.TickEvent.Phase;
-import net.minecraftforge.event.TickEvent.PlayerTickEvent;
-import net.minecraftforge.event.entity.player.PlayerEvent;
-import net.minecraftforge.event.entity.player.PlayerEvent.PlayerChangedDimensionEvent;
-import net.minecraftforge.event.entity.player.PlayerEvent.PlayerLoggedInEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
-import net.minecraftforge.network.PacketDistributor;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.attachment.AttachmentType;
+import net.neoforged.neoforge.capabilities.*;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerChangedDimensionEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedInEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.neoforge.event.tick.PlayerTickEvent;
+import net.neoforged.neoforge.items.ItemStackHandler;
+import net.neoforged.neoforge.items.wrapper.InvWrapper;
+import net.neoforged.neoforge.registries.DeferredRegister;
+import net.neoforged.neoforge.registries.NeoForgeRegistries;
 import sfiomn.legendarysurvivaloverhaul.LegendarySurvivalOverhaul;
 import sfiomn.legendarysurvivaloverhaul.api.bodydamage.BodyDamageUtil;
 import sfiomn.legendarysurvivaloverhaul.api.health.HealthUtil;
@@ -26,6 +27,7 @@ import sfiomn.legendarysurvivaloverhaul.common.capabilities.food.FoodProvider;
 import sfiomn.legendarysurvivaloverhaul.common.capabilities.health.HealthCapability;
 import sfiomn.legendarysurvivaloverhaul.common.capabilities.health.HealthProvider;
 import sfiomn.legendarysurvivaloverhaul.common.capabilities.temperature.TemperatureCapability;
+import sfiomn.legendarysurvivaloverhaul.common.capabilities.temperature.TemperatureItemCapability;
 import sfiomn.legendarysurvivaloverhaul.common.capabilities.temperature.TemperatureProvider;
 import sfiomn.legendarysurvivaloverhaul.common.capabilities.thirst.ThirstCapability;
 import sfiomn.legendarysurvivaloverhaul.common.capabilities.thirst.ThirstProvider;
@@ -33,56 +35,75 @@ import sfiomn.legendarysurvivaloverhaul.common.capabilities.wetness.WetnessCapab
 import sfiomn.legendarysurvivaloverhaul.common.capabilities.wetness.WetnessProvider;
 import sfiomn.legendarysurvivaloverhaul.config.Config;
 import sfiomn.legendarysurvivaloverhaul.network.packets.*;
+import sfiomn.legendarysurvivaloverhaul.registry.BlockEntityRegistry;
+import sfiomn.legendarysurvivaloverhaul.registry.ItemRegistry;
 import sfiomn.legendarysurvivaloverhaul.util.CapabilityUtil;
 
-@Mod.EventBusSubscriber(modid = LegendarySurvivalOverhaul.MOD_ID, bus = EventBusSubscriber.Bus.FORGE)
+import java.util.function.Supplier;
+
+@EventBusSubscriber(modid = LegendarySurvivalOverhaul.MOD_ID, bus = EventBusSubscriber.Bus.GAME)
 public class ModCapabilities
 {
-	public static final ResourceLocation TEMPERATURE_RES = new ResourceLocation(LegendarySurvivalOverhaul.MOD_ID, "temperature");
-	public static final ResourceLocation WETNESS_RES = new ResourceLocation(LegendarySurvivalOverhaul.MOD_ID, "wetness");
-	public static final ResourceLocation THIRST_RES = new ResourceLocation(LegendarySurvivalOverhaul.MOD_ID, "thirst");
-	public static final ResourceLocation HEALTH_RES = new ResourceLocation(LegendarySurvivalOverhaul.MOD_ID, "health");
-	public static final ResourceLocation FOOD_RES = new ResourceLocation(LegendarySurvivalOverhaul.MOD_ID, "food");
-	public static final ResourceLocation BODY_DAMAGE_RES = new ResourceLocation(LegendarySurvivalOverhaul.MOD_ID, "body_damage");
-	
-	@SubscribeEvent
-	public static void attachCapabilityPlayer(AttachCapabilitiesEvent<Entity> event)
+
+	public static final ResourceLocation TEMPERATURE_RES = ResourceLocation.fromNamespaceAndPath(LegendarySurvivalOverhaul.MOD_ID, "temperature");
+	public static final ResourceLocation WETNESS_RES = ResourceLocation.fromNamespaceAndPath(LegendarySurvivalOverhaul.MOD_ID, "wetness");
+	public static final ResourceLocation THIRST_RES = ResourceLocation.fromNamespaceAndPath(LegendarySurvivalOverhaul.MOD_ID, "thirst");
+	public static final ResourceLocation HEALTH_RES = ResourceLocation.fromNamespaceAndPath(LegendarySurvivalOverhaul.MOD_ID, "health");
+	public static final ResourceLocation FOOD_RES = ResourceLocation.fromNamespaceAndPath(LegendarySurvivalOverhaul.MOD_ID, "food");
+	public static final ResourceLocation BODY_DAMAGE_RES = ResourceLocation.fromNamespaceAndPath(LegendarySurvivalOverhaul.MOD_ID, "body_damage");
+
+	public static final EntityCapability<BodyDamageCapability, Void> BODY_DAMAGE_CAPABILITY = EntityCapability.createVoid(BODY_DAMAGE_RES, BodyDamageCapability.class);
+	public static final EntityCapability<FoodCapability, Void> FOOD_CAPABILITY = EntityCapability.createVoid(FOOD_RES, FoodCapability.class);
+	public static final EntityCapability<ThirstCapability, Void> THIRST_CAPABILITY = EntityCapability.createVoid(THIRST_RES, ThirstCapability.class);
+	public static final EntityCapability<WetnessCapability, Void> WETNESS_CAPABILITY = EntityCapability.createVoid(WETNESS_RES, WetnessCapability.class);
+	public static final EntityCapability<HealthCapability, Void> HEALTH_CAPABILITY = EntityCapability.createVoid(HEALTH_RES, HealthCapability.class);
+	public static final EntityCapability<TemperatureCapability, Void> TEMPERATURE_CAPABILITY = EntityCapability.createVoid(TEMPERATURE_RES, TemperatureCapability.class);
+
+	public static void attachCapabilityPlayer(RegisterCapabilitiesEvent event)
 	{
-		if (event.getObject() instanceof LivingEntity)
-		{
-			if (event.getObject() instanceof Player player)
-			{
-				event.addCapability(TEMPERATURE_RES, new TemperatureProvider());
-				event.addCapability(WETNESS_RES, new WetnessProvider());
-				event.addCapability(THIRST_RES, new ThirstProvider());
-				event.addCapability(HEALTH_RES, new HealthProvider());
-				event.addCapability(FOOD_RES, new FoodProvider());
-				event.addCapability(BODY_DAMAGE_RES, new BodyDamageProvider());
-			}
-		}
+		event.registerEntity(BODY_DAMAGE_CAPABILITY, EntityType.PLAYER, new BodyDamageProvider());
+		event.registerEntity(FOOD_CAPABILITY, EntityType.PLAYER, new FoodProvider());
+		event.registerEntity(THIRST_CAPABILITY, EntityType.PLAYER, new ThirstProvider());
+		event.registerEntity(WETNESS_CAPABILITY, EntityType.PLAYER, new WetnessProvider());
+		event.registerEntity(HEALTH_CAPABILITY, EntityType.PLAYER, new HealthProvider());
+		event.registerEntity(TEMPERATURE_CAPABILITY, EntityType.PLAYER, new TemperatureProvider());
+
+		// Must register at least one item
+		event.registerItem(TemperatureItemCapability.TemperatureItemProvider.TEMPERATURE_ITEM_CAPABILITY, new TemperatureItemCapability.TemperatureItemProvider(), ItemRegistry.THERMOMETER);
+
+		event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, BlockEntityRegistry.HEATER_BLOCK_ENTITY.get(), (entity, context) -> new InvWrapper(entity));
+		event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, BlockEntityRegistry.COOLER_BLOCK_ENTITY.get(), (entity, context) -> new InvWrapper(entity));
 	}
 
 	@SubscribeEvent
+	public static void onPlayerTickPre(PlayerTickEvent.Pre event) {
+		onPlayerTick(event);
+	}
+
+	@SubscribeEvent
+	public static void onPlayerTickPost(PlayerTickEvent.Post event) {
+		onPlayerTick(event);
+	}
+
 	public static void onPlayerTick(PlayerTickEvent event)
 	{
-		if (event.side.isClient())
+		Player player = event.getEntity();
+		Level level = player.level();
+
+		if (level.isClientSide())
 		{
 			// Client Side
-			Player player = event.player;
-
 			if (shouldSkipTick(player)) return;
 
 			if (Config.Baked.temperatureEnabled) {
 				TemperatureCapability tempCap = CapabilityUtil.getTempCapability(player);
 
-				tempCap.tickClient(player, event.phase);
+				tempCap.tickClient(player, event);
 			}
 		}
 		else
 		{
 			// Server Side
-			Player player = event.player;
-			Level level = player.level();
 
 			if (shouldSkipTick(player)) return;
 
@@ -93,21 +114,21 @@ public class ModCapabilities
 
 			if (Config.Baked.temperatureEnabled) {
 				TemperatureCapability tempCap = CapabilityUtil.getTempCapability(player);
-				
-				tempCap.tickUpdate(player, level, event.phase);
-				
-				if(event.phase == Phase.START && (tempCap.isDirty() || tempCap.getPacketTimer() % Config.Baked.routinePacketSync == 0))
+
+				tempCap.tickUpdate(player, level, event);
+
+				if(event instanceof PlayerTickEvent.Pre && (tempCap.isDirty() || tempCap.getPacketTimer() % Config.Baked.routinePacketSync == 0))
 				{
 					tempCap.setClean();
 					sendTemperatureUpdate(player);
 				}
 			}
-			
+
 			if (Config.Baked.wetnessEnabled) {
 				WetnessCapability wetCap = CapabilityUtil.getWetnessCapability(player);
-				
-				wetCap.tickUpdate(player, level, event.phase);
-				
+
+				wetCap.tickUpdate(player, level, event);
+
 				/**
 				 * Because of the way wetness is ticked, if it's dirty, it's probably going to be dirty next tick,
 				 * and if it's clean, it's probably going to be clean the next tick
@@ -115,7 +136,7 @@ public class ModCapabilities
 				 * just because the player is standing out in the rain
 				 * since it's not good for performance
 				 */
-				if (event.phase == Phase.START && (wetCap.getPacketTimer() % Config.Baked.routinePacketSync == 0 || wetCap.isDirty()))
+				if (event instanceof PlayerTickEvent.Pre && (wetCap.getPacketTimer() % Config.Baked.routinePacketSync == 0 || wetCap.isDirty()))
 				{
 					wetCap.setClean();
 					sendWetnessUpdate(player);
@@ -125,9 +146,9 @@ public class ModCapabilities
 			if (Config.Baked.thirstEnabled) {
 				ThirstCapability thirstCap = CapabilityUtil.getThirstCapability(player);
 
-				thirstCap.tickUpdate(player, level, event.phase);
+				thirstCap.tickUpdate(player, level, event);
 
-				if (event.phase == Phase.START && (thirstCap.isDirty() || thirstCap.getPacketTimer() % Config.Baked.routinePacketSync == 0))
+				if (event instanceof PlayerTickEvent.Pre && (thirstCap.isDirty() || thirstCap.getPacketTimer() % Config.Baked.routinePacketSync == 0))
 				{
 					thirstCap.setClean();
 					sendThirstUpdate(player);
@@ -137,15 +158,15 @@ public class ModCapabilities
 			if (Config.Baked.baseFoodExhaustion > 0) {
 				FoodCapability foodCapability = CapabilityUtil.getFoodCapability(player);
 
-				foodCapability.tickUpdate(player, level, event.phase);
+				foodCapability.tickUpdate(player, level, event);
 			}
 
 			if (Config.Baked.localizedBodyDamageEnabled) {
 				BodyDamageCapability bodyDamageCapability = CapabilityUtil.getBodyDamageCapability(player);
 
-				bodyDamageCapability.tickUpdate(player, level, event.phase);
+				bodyDamageCapability.tickUpdate(player, level, event);
 
-				if(event.phase == Phase.START && (bodyDamageCapability.isDirty() || bodyDamageCapability.getPacketTimer() % Config.Baked.routinePacketSync == 0))
+				if(event instanceof PlayerTickEvent.Pre && (bodyDamageCapability.isDirty() || bodyDamageCapability.getPacketTimer() % Config.Baked.routinePacketSync == 0))
 				{
 					bodyDamageCapability.setClean();
 					sendBodyDamageUpdate(player);
@@ -155,7 +176,7 @@ public class ModCapabilities
 			if (Config.Baked.healthOverhaulEnabled) {
 				HealthCapability healthCapability = CapabilityUtil.getHealthCapability(player);
 
-				if(event.phase == Phase.START && healthCapability.isDirty())
+				if(event instanceof PlayerTickEvent.Pre && healthCapability.isDirty())
 				{
 					healthCapability.setClean();
 					sendHealthUpdate(player);
@@ -182,9 +203,9 @@ public class ModCapabilities
 
 			if (Config.Baked.healthOverhaulEnabled)
 			{
-				orig.reviveCaps();
+//				orig.reviveCaps();
 				HealthCapability oldCap = CapabilityUtil.getHealthCapability(orig);
-				orig.invalidateCaps();
+//				orig.invalidateCaps();
 
 				HealthCapability newCap = CapabilityUtil.getHealthCapability(player);
 				newCap.readNBT(oldCap.writeNBT());
@@ -204,9 +225,9 @@ public class ModCapabilities
 		{
 			if (Config.Baked.temperatureEnabled)
 			{
-				orig.reviveCaps();
+//				orig.reviveCaps();
 				TemperatureCapability oldCap = CapabilityUtil.getTempCapability(orig);
-				orig.invalidateCaps();
+//				orig.invalidateCaps();
 
 				TemperatureCapability newCap = CapabilityUtil.getTempCapability(player);
 				newCap.readNBT(oldCap.writeNBT());
@@ -216,9 +237,9 @@ public class ModCapabilities
 
 			if (Config.Baked.wetnessEnabled)
 			{
-				orig.reviveCaps();
+//				orig.reviveCaps();
 				WetnessCapability oldCap = CapabilityUtil.getWetnessCapability(orig);
-				orig.invalidateCaps();
+//				orig.invalidateCaps();
 
 				WetnessCapability newCap = CapabilityUtil.getWetnessCapability(player);
 				newCap.readNBT(oldCap.writeNBT());
@@ -228,9 +249,9 @@ public class ModCapabilities
 
 			if (Config.Baked.thirstEnabled)
 			{
-				orig.reviveCaps();
+//				orig.reviveCaps();
 				ThirstCapability oldCap = CapabilityUtil.getThirstCapability(orig);
-				orig.invalidateCaps();
+//				orig.invalidateCaps();
 
 				ThirstCapability newCap = CapabilityUtil.getThirstCapability(player);
 				newCap.readNBT(oldCap.writeNBT());
@@ -240,9 +261,9 @@ public class ModCapabilities
 			
 			if (Config.Baked.healthOverhaulEnabled)
 			{
-				orig.reviveCaps();
+//				orig.reviveCaps();
 				HealthCapability oldCap = CapabilityUtil.getHealthCapability(orig);
-				orig.invalidateCaps();
+//				orig.invalidateCaps();
 
 				HealthCapability newCap = CapabilityUtil.getHealthCapability(player);
 				newCap.readNBT(oldCap.writeNBT());
@@ -255,9 +276,9 @@ public class ModCapabilities
 
 			if (Config.Baked.localizedBodyDamageEnabled)
 			{
-				orig.reviveCaps();
+//				orig.reviveCaps();
 				BodyDamageCapability oldCap = CapabilityUtil.getBodyDamageCapability(orig);
-				orig.invalidateCaps();
+//				orig.invalidateCaps();
 
 				BodyDamageCapability newCap = CapabilityUtil.getBodyDamageCapability(player);
 				newCap.readNBT(oldCap.writeNBT());
@@ -272,8 +293,7 @@ public class ModCapabilities
 	{
 		if (!player.level().isClientSide())
 		{
-			UpdateTemperaturesPacket.sendTo(
-					PacketDistributor.PLAYER.with(() -> (ServerPlayer) player),
+			UpdateTemperaturesPacket.sendTo((ServerPlayer) player,
 					CapabilityUtil.getTempCapability(player).writeNBT());
 		}
 	}
@@ -282,8 +302,7 @@ public class ModCapabilities
 	{
 		if (!player.level().isClientSide)
 		{
-			UpdateWetnessPacket.sendTo(
-					PacketDistributor.PLAYER.with(() -> (ServerPlayer) player),
+			UpdateWetnessPacket.sendTo((ServerPlayer) player,
 					CapabilityUtil.getWetnessCapability(player).writeNBT());
 		}
 	}
@@ -292,8 +311,7 @@ public class ModCapabilities
 	{
 		if (!player.level().isClientSide)
 		{
-			UpdateThirstPacket.sendTo(
-					PacketDistributor.PLAYER.with(() -> (ServerPlayer) player),
+			UpdateThirstPacket.sendTo((ServerPlayer) player,
 					CapabilityUtil.getThirstCapability(player).writeNBT());
 		}
 	}
@@ -302,8 +320,7 @@ public class ModCapabilities
 	{
 		if (!player.level().isClientSide)
 		{
-			UpdateBodyDamagePacket.sendTo(
-					PacketDistributor.PLAYER.with(() -> (ServerPlayer) player),
+			UpdateBodyDamagePacket.sendTo((ServerPlayer) player,
 					CapabilityUtil.getBodyDamageCapability(player).writeNBT());
 		}
 	}
@@ -312,8 +329,7 @@ public class ModCapabilities
 	{
 		if (!player.level().isClientSide)
 		{
-			UpdateHeartsPacket.sendTo(
-					PacketDistributor.PLAYER.with(() -> (ServerPlayer) player),
+			UpdateHeartsPacket.sendTo((ServerPlayer) player,
 					CapabilityUtil.getHealthCapability(player).writeNBT());
 		}
 	}

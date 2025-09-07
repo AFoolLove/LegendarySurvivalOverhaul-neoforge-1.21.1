@@ -5,10 +5,17 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.network.NetworkEvent;
-import net.minecraftforge.network.PacketDistributor;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.network.PacketDistributor;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
+import org.jetbrains.annotations.NotNull;
+import sfiomn.legendarysurvivaloverhaul.LegendarySurvivalOverhaul;
+import sfiomn.legendarysurvivaloverhaul.common.capabilities.ModCapabilities;
 import sfiomn.legendarysurvivaloverhaul.common.capabilities.wetness.WetnessCapability;
 import sfiomn.legendarysurvivaloverhaul.common.capabilities.wetness.WetnessProvider;
 import sfiomn.legendarysurvivaloverhaul.network.NetworkHandler;
@@ -16,8 +23,12 @@ import sfiomn.legendarysurvivaloverhaul.util.CapabilityUtil;
 
 import java.util.function.Supplier;
 
-public class UpdateWetnessPacket
+public class UpdateWetnessPacket implements CustomPacketPayload
 {
+	public static final Type<UpdateWetnessPacket> TYPE = new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(LegendarySurvivalOverhaul.MOD_ID, "update_wetness"));
+	public static final StreamCodec<FriendlyByteBuf, UpdateWetnessPacket> STREAM_CODEC =
+			CustomPacketPayload.codec(UpdateWetnessPacket::encode, UpdateWetnessPacket::decode);
+
 	private CompoundTag compound;
 	
 	public UpdateWetnessPacket(Tag compound)
@@ -26,6 +37,11 @@ public class UpdateWetnessPacket
 	}
 	
 	public UpdateWetnessPacket() {}
+
+	@Override
+	public @NotNull Type<? extends CustomPacketPayload> type() {
+		return TYPE;
+	}
 
 	public static void encode(UpdateWetnessPacket message, FriendlyByteBuf buffer)
 	{
@@ -37,35 +53,24 @@ public class UpdateWetnessPacket
 		return new UpdateWetnessPacket(buffer.readNbt());
 	}
 	
-	public static void handle(UpdateWetnessPacket message, Supplier<NetworkEvent.Context> supplier)
+	public static void handle(UpdateWetnessPacket message, IPayloadContext context)
 	{
-		final NetworkEvent.Context context = supplier.get();
-		context.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> syncWetness(message.compound)));
-		
-		supplier.get().setPacketHandled(true);
-	}
-	
-	public static DistExecutor.SafeRunnable syncWetness(CompoundTag compound)
-	{
-		return new DistExecutor.SafeRunnable()
-		{
-			private static final long serialVersionUID = 1L;
-			
-			@Override
-			public void run()
-			{
-				LocalPlayer player = Minecraft.getInstance().player;
-
-				if (player != null) {
-					WetnessCapability wetness = CapabilityUtil.getWetnessCapability(player);
-
-					wetness.readNBT(compound);
-				}
-			}
-		};
+		if (context.flow().isClientbound()) {
+			context.enqueueWork(() -> handle(message));
+		}
 	}
 
-	public static void sendTo(PacketDistributor.PacketTarget packetDistributor, Tag compound) {
-		NetworkHandler.INSTANCE.send(packetDistributor, new UpdateWetnessPacket(compound));
+	@OnlyIn(Dist.CLIENT)
+	private static void handle(UpdateWetnessPacket message) {
+		LocalPlayer player = Minecraft.getInstance().player;
+
+		if (player != null) {
+			WetnessCapability wetness = CapabilityUtil.getWetnessCapability(player);
+			wetness.readNBT(message.compound);
+		}
+	}
+
+	public static void sendTo(ServerPlayer player, Tag compound) {
+		PacketDistributor.sendToPlayer(player, new UpdateWetnessPacket(compound));
 	}
 }

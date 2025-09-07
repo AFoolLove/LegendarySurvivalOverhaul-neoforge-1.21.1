@@ -3,11 +3,14 @@ package sfiomn.legendarysurvivaloverhaul.network.packets;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.network.NetworkEvent;
-import net.minecraftforge.network.PacketDistributor;
+import net.minecraft.server.level.ServerPlayer;
+import net.neoforged.neoforge.network.PacketDistributor;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
+import org.jetbrains.annotations.NotNull;
+import sfiomn.legendarysurvivaloverhaul.LegendarySurvivalOverhaul;
 import sfiomn.legendarysurvivaloverhaul.api.data.json.JsonHealingConsumable;
 import sfiomn.legendarysurvivaloverhaul.common.listeners.BodyDamageHealingConsumableListener;
 import sfiomn.legendarysurvivaloverhaul.network.NetworkHandler;
@@ -16,8 +19,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
 
-public class SyncBodyDamageHealingConsumablesPacket
+public class SyncBodyDamageHealingConsumablesPacket implements CustomPacketPayload
 {
+	public static final Type<SyncBodyDamageHealingConsumablesPacket> TYPE = new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(LegendarySurvivalOverhaul.MOD_ID, "sync_body_damage_healing_consumables"));
+	public static final StreamCodec<FriendlyByteBuf, SyncBodyDamageHealingConsumablesPacket> STREAM_CODEC =
+			CustomPacketPayload.codec(SyncBodyDamageHealingConsumablesPacket::encode, SyncBodyDamageHealingConsumablesPacket::decode);
+
 	private final Map<ResourceLocation, JsonHealingConsumable> healingConsumables;
 	private final int size;
 
@@ -25,6 +32,11 @@ public class SyncBodyDamageHealingConsumablesPacket
 	{
 		this.healingConsumables = Map.copyOf(healingConsumables);
 		this.size = healingConsumables.size();
+	}
+
+	@Override
+	public @NotNull Type<? extends CustomPacketPayload> type() {
+		return TYPE;
 	}
 
 	public static void encode(SyncBodyDamageHealingConsumablesPacket message, FriendlyByteBuf buffer)
@@ -53,29 +65,16 @@ public class SyncBodyDamageHealingConsumablesPacket
 		return new SyncBodyDamageHealingConsumablesPacket(healingConsumables);
 	}
 	
-	public static void handle(SyncBodyDamageHealingConsumablesPacket message, Supplier<NetworkEvent.Context> supplier)
+	public static void handle(SyncBodyDamageHealingConsumablesPacket message, IPayloadContext context)
 	{
-		final NetworkEvent.Context context = supplier.get();
-		context.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> syncTemperatureItems(message.healingConsumables)));
-		
-		supplier.get().setPacketHandled(true);
+		if (context.flow().isClientbound()) {
+			context.enqueueWork(() -> {
+				BodyDamageHealingConsumableListener.acceptServerHealingConsumables(message.healingConsumables);
+			});
+		}
 	}
 
-	public static DistExecutor.SafeRunnable syncTemperatureItems(Map<ResourceLocation, JsonHealingConsumable> healingConsumables)
-	{
-		return new DistExecutor.SafeRunnable()
-		{
-			private static final long serialVersionUID = 1L;
-
-			@Override
-			public void run()
-			{
-				BodyDamageHealingConsumableListener.acceptServerHealingConsumables(healingConsumables);
-			}
-		};
-	}
-
-	public static void sendTo(PacketDistributor.PacketTarget packetDistributor, Map<ResourceLocation, JsonHealingConsumable> healingConsumables) {
-		NetworkHandler.INSTANCE.send(packetDistributor, new SyncBodyDamageHealingConsumablesPacket(healingConsumables));
+	public static void sendTo(ServerPlayer player, Map<ResourceLocation, JsonHealingConsumable> healingConsumables) {
+		PacketDistributor.sendToPlayer(player, new SyncBodyDamageHealingConsumablesPacket(healingConsumables));
 	}
 }

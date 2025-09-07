@@ -1,6 +1,7 @@
 package sfiomn.legendarysurvivaloverhaul.common.items.drink;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.protocol.game.ClientboundSoundPacket;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -18,8 +19,8 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
-import net.minecraftforge.common.ForgeMod;
-import net.minecraftforge.registries.ForgeRegistries;
+
+
 import org.jetbrains.annotations.NotNull;
 import sfiomn.legendarysurvivaloverhaul.LegendarySurvivalOverhaul;
 import sfiomn.legendarysurvivaloverhaul.api.data.json.JsonMobEffect;
@@ -44,7 +45,7 @@ public class CanteenItem extends DrinkItem {
     }
 
     @Override
-    public int getUseDuration(@NotNull ItemStack stack) {
+    public int getUseDuration(@NotNull ItemStack stack, @NotNull LivingEntity entity) {
         return canDrink(stack) ? 40 : 0;
     }
 
@@ -89,7 +90,7 @@ public class CanteenItem extends DrinkItem {
             player.swing(InteractionHand.MAIN_HAND, true);
 
             if (player instanceof ServerPlayer serverPlayer) {
-                ForgeRegistries.SOUND_EVENTS.getHolder(SoundEvents.BOTTLE_FILL).ifPresent(soundHolder -> serverPlayer.connection.send(
+                BuiltInRegistries.SOUND_EVENT.getHolder(SoundEvents.BOTTLE_FILL.getLocation()).ifPresent(soundHolder -> serverPlayer.connection.send(
                         new ClientboundSoundPacket(
                                 soundHolder, SoundSource.PLAYERS, serverPlayer.getX(),
                                 serverPlayer.getY(), serverPlayer.getZ(), 1.0F, 1.0F, player.level().getRandom().nextLong())));
@@ -103,7 +104,7 @@ public class CanteenItem extends DrinkItem {
 
     @Override
     public @NotNull InteractionResultHolder<ItemStack> use(@NotNull Level level, Player player, @NotNull InteractionHand hand) {
-        HitResult positionLookedAt = player.pick(player.getAttributeValue(ForgeMod.BLOCK_REACH.get()) / 2, 0.0F, true);
+        HitResult positionLookedAt = player.pick(player.blockInteractionRange() / 2, 0.0F, true);
 
         boolean isWater = false;
         if (positionLookedAt.getType() == HitResult.Type.BLOCK) {
@@ -122,7 +123,7 @@ public class CanteenItem extends DrinkItem {
         if (player.isCrouching() && player.getViewXRot(1.0f) < -60.0f && canDrink(canteen) && Config.Baked.selfWateringCanteenEnabled) {
             player.playSound(SoundRegistry.SELF_WATERING.get(), 1.0f, 1.0f);
             if (player.isOnFire())
-                player.setSecondsOnFire(0);
+                player.clearFire();
             if (Config.Baked.selfWateringCanteenWetnessIncrease > 0)
                 WetnessUtil.addWetness(player, Config.Baked.selfWateringCanteenWetnessIncrease);
             player.swing(InteractionHand.MAIN_HAND);

@@ -1,6 +1,7 @@
 package sfiomn.legendarysurvivaloverhaul.common.temperature;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
 import net.minecraft.core.Vec3i;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
@@ -50,9 +51,9 @@ public class BiomeModifier extends ModifierBase
 
 		for (Vec3i offset : posOffsets)
 		{
-			Biome biome = level.getBiome(pos.offset(offset)).get();
+			Holder<Biome> biome = level.getBiome(pos.offset(offset));
 			float humidity = getHumidityForBiome(biome);
-			float biomeTemperature = getNormalizedTempForBiome(level, biome);
+			float biomeTemperature = getNormalizedTempForBiome(level, biome.value());
 
 			// Deserts are cold at night since heat isn't kept by moisture in the air
 			if (drynessTimeMultiplier < 1 && humidity < 0.2f && biomeTemperature > 0.80f)

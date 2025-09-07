@@ -1,14 +1,15 @@
 package sfiomn.legendarysurvivaloverhaul.api.data.providers;
 
 import net.minecraft.core.HolderLookup;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.data.CachedOutput;
 import net.minecraft.data.DataProvider;
 import net.minecraft.data.PackOutput;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
-import net.minecraftforge.common.data.ExistingFileHelper;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.neoforge.common.data.ExistingFileHelper;
+
 import sfiomn.legendarysurvivaloverhaul.LegendarySurvivalOverhaul;
 import sfiomn.legendarysurvivaloverhaul.api.data.builder.*;
 import sfiomn.legendarysurvivaloverhaul.api.temperature.TemporaryModifierGroupEnum;
@@ -62,6 +63,7 @@ public abstract class TemperatureDataProvider implements DataProvider {
 
     public abstract void generate(HolderLookup.Provider provider, ExistingFileHelper existingFileHelper);
 
+    @SuppressWarnings("t")
     @Nonnull
     public CompletableFuture<?> run(@Nonnull CachedOutput pOutput) {
         return this.lookupProvider.thenCompose((p_255484_) -> {
@@ -69,43 +71,43 @@ public abstract class TemperatureDataProvider implements DataProvider {
             this.generate(p_255484_, this.fileHelper);
             this.consumableBuilders.forEach((consumable, builder) -> {
                 ResourceLocation jsonKey = consumable.split(":").length == 1 ?
-                        new ResourceLocation(this.modId, consumable.toLowerCase()) : new ResourceLocation(consumable);
+                        ResourceLocation.fromNamespaceAndPath(this.modId, consumable.toLowerCase()) : ResourceLocation.parse(consumable);
                 list.add(DataProvider.saveStable(pOutput, builder.build(), this.consumablesPathProvider.json(jsonKey)));
             });
             this.consumableBlockBuilders.forEach((consumableBlock, builder) -> {
                 ResourceLocation jsonKey = consumableBlock.split(":").length == 1 ?
-                        new ResourceLocation(this.modId, consumableBlock.toLowerCase()) : new ResourceLocation(consumableBlock);
+                        ResourceLocation.fromNamespaceAndPath(this.modId, consumableBlock.toLowerCase()) : ResourceLocation.parse(consumableBlock);
                 list.add(DataProvider.saveStable(pOutput, builder.build(), this.consumableBlocksPathProvider.json(jsonKey)));
             });
             this.blockBuilders.forEach((block, builder) -> {
                 ResourceLocation jsonKey = block.split(":").length == 1 ?
-                        new ResourceLocation(this.modId, block.toLowerCase()) : new ResourceLocation(block);
+                        ResourceLocation.fromNamespaceAndPath(this.modId, block.toLowerCase()) : ResourceLocation.parse(block);
                 list.add(DataProvider.saveStable(pOutput, builder.build(), this.blocksPathProvider.json(jsonKey)));
             });
             this.itemBuilders.forEach((item, builder) -> {
                 ResourceLocation jsonKey = item.split(":").length == 1 ?
-                        new ResourceLocation(this.modId, item.toLowerCase()) : new ResourceLocation(item);
+                        ResourceLocation.fromNamespaceAndPath(this.modId, item.toLowerCase()) : ResourceLocation.parse(item);
                 list.add(DataProvider.saveStable(pOutput, builder.build(), this.itemsPathProvider.json(jsonKey)));
             });
             this.biomeBuilders.forEach((biome, builder) -> {
-                Path path = this.biomesPathProvider.json(new ResourceLocation(this.modId, biome.toLowerCase()));
+                Path path = this.biomesPathProvider.json(ResourceLocation.fromNamespaceAndPath(this.modId, biome.toLowerCase()));
                 list.add(DataProvider.saveStable(pOutput, builder.build(), path));
             });
             this.fuelItemBuilders.forEach((fuelItem, builder) -> {
                 ResourceLocation jsonKey = fuelItem.split(":").length == 1 ?
-                        new ResourceLocation(this.modId, fuelItem.toLowerCase()) : new ResourceLocation(fuelItem);
+                        ResourceLocation.fromNamespaceAndPath(this.modId, fuelItem.toLowerCase()) : ResourceLocation.parse(fuelItem);
                 list.add(DataProvider.saveStable(pOutput, builder.build(), this.fuelItemPathProvider.json(jsonKey)));
             });
             this.dimensionBuilders.forEach((dimension, builder) -> {
-                Path path = this.dimensionPathProvider.json(new ResourceLocation(this.modId, dimension.toLowerCase()));
+                Path path = this.dimensionPathProvider.json(ResourceLocation.fromNamespaceAndPath(this.modId, dimension.toLowerCase()));
                 list.add(DataProvider.saveStable(pOutput, builder.build(), path));
             });
             this.mountBuilders.forEach((mount, builder) -> {
-                Path path = this.mountPathProvider.json(new ResourceLocation(this.modId, mount.toLowerCase()));
+                Path path = this.mountPathProvider.json(ResourceLocation.fromNamespaceAndPath(this.modId, mount.toLowerCase()));
                 list.add(DataProvider.saveStable(pOutput, builder.build(), path));
             });
             this.originBuilders.forEach((origin, builder) -> {
-                Path path = this.originPathProvider.json(new ResourceLocation(this.modId, origin.toLowerCase()));
+                Path path = this.originPathProvider.json(ResourceLocation.fromNamespaceAndPath(this.modId, origin.toLowerCase()));
                 list.add(DataProvider.saveStable(pOutput, builder.build(), path));
             });
             return CompletableFuture.allOf(list.toArray(CompletableFuture[]::new));
@@ -117,7 +119,7 @@ public abstract class TemperatureDataProvider implements DataProvider {
     }
 
     public final ITemperatureConsumableDataHolder consumable(Item item) {
-        ResourceLocation itemRegistryName = ForgeRegistries.ITEMS.getKey(item);
+        ResourceLocation itemRegistryName = BuiltInRegistries.ITEM.getKey(item);
         assert itemRegistryName != null;
         return this.consumableBuilders.computeIfAbsent(itemRegistryName.toString(), (k) -> new TemperatureConsumableDataHolder());
     }
@@ -144,7 +146,7 @@ public abstract class TemperatureDataProvider implements DataProvider {
     }
 
     public final ITemperatureBlockDataHolder block(Block block) {
-        ResourceLocation blockRegistryName = ForgeRegistries.BLOCKS.getKey(block);
+        ResourceLocation blockRegistryName = BuiltInRegistries.BLOCK.getKey(block);
         assert blockRegistryName != null;
         return this.blockBuilders.computeIfAbsent(blockRegistryName.toString(), (k) -> new TemperatureBlockDataHolder());
     }
@@ -158,7 +160,7 @@ public abstract class TemperatureDataProvider implements DataProvider {
     }
 
     public final ITemperatureResistanceData item(Item item) {
-        ResourceLocation itemRegistryName = ForgeRegistries.ITEMS.getKey(item);
+        ResourceLocation itemRegistryName = BuiltInRegistries.ITEM.getKey(item);
         assert itemRegistryName != null;
         return this.itemBuilders.computeIfAbsent(itemRegistryName.toString(), (k) -> new TemperatureResistanceData());
     }

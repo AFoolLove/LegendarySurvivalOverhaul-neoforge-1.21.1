@@ -1,15 +1,15 @@
 package sfiomn.legendarysurvivaloverhaul.client.render;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import sfiomn.legendarysurvivaloverhaul.util.GuiUtils;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.LayeredDraw;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.client.gui.overlay.ForgeGui;
-import net.minecraftforge.client.gui.overlay.IGuiOverlay;
 import org.jetbrains.annotations.Nullable;
 import sfiomn.legendarysurvivaloverhaul.LegendarySurvivalOverhaul;
 import sfiomn.legendarysurvivaloverhaul.api.data.json.JsonThirstConsumable;
@@ -27,7 +27,7 @@ public class RenderThirstGui
 	private static ThirstCapability THIRST_CAP = null;
 	private static final Random rand = new Random();
 
-	public static final ResourceLocation ICONS = new ResourceLocation(LegendarySurvivalOverhaul.MOD_ID, "textures/gui/overlay.png");
+	public static final ResourceLocation ICONS = ResourceLocation.fromNamespaceAndPath(LegendarySurvivalOverhaul.MOD_ID, "textures/gui/overlay.png");
 
 	// Dimensions of the icon
 	private static final int THIRST_TEXTURE_WIDTH = 9;
@@ -42,35 +42,37 @@ public class RenderThirstGui
 	private static float unclampedAlphaPreview;
 	private static int alphaDirection = 1;
 
-	public static final IGuiOverlay THIRST_GUI = (forgeGui, guiGraphics, partialTicks, width, height) -> {
+	public static final LayeredDraw.Layer THIRST_GUI = (guiGraphics, deltaTracker) -> {
 		if (Config.Baked.thirstEnabled
-				&& Config.Baked.showHydrationBar
-				&& !Minecraft.getInstance().options.hideGui
-				&& forgeGui.shouldDrawSurvivalElements()) {
-			Player player = forgeGui.getMinecraft().player;
+			&& Config.Baked.showHydrationBar
+			&& !Minecraft.getInstance().options.hideGui
+			&& GuiUtils.shouldDrawSurvivalElements()) {
+			Player player = Minecraft.getInstance().player;
+			int width = guiGraphics.guiWidth();
+			int height = guiGraphics.guiHeight();
 
 			if (player != null) {
 				if (!ThirstUtil.isThirstActive(player))
 					return;
 
 				rand.setSeed(player.tickCount * 445L);
-				forgeGui.setupOverlayRenderState(true, false);
+				GuiUtils.setupOverlayRenderState(true, false);
 				RenderSystem.disableDepthTest();
 				RenderSystem.depthMask(false);
 
 				Minecraft.getInstance().getProfiler().push("thirst_gui");
-				drawHydrationBar(forgeGui, guiGraphics, player, width, height);
+				drawHydrationBar(guiGraphics, player, width, height);
 				Minecraft.getInstance().getProfiler().pop();
 
 				RenderSystem.depthMask(true);
 				RenderSystem.enableDepthTest();
 
-				forgeGui.rightHeight += 10;
+				Minecraft.getInstance().gui.rightHeight += 10;
 			}
 		}
 	};
 
-	public static void drawHydrationBar(ForgeGui forgeGui, GuiGraphics gui, Player player, int width, int height) {
+	public static void drawHydrationBar(GuiGraphics gui, Player player, int width, int height) {
 		// Update player's thirst capability every 20 ticks
 		if (THIRST_CAP == null || player.tickCount % 20 == 0)
 			THIRST_CAP = CapabilityUtil.getThirstCapability(player);
@@ -88,7 +90,7 @@ public class RenderThirstGui
 
 			// Force a reset flash when item becomes edible && avoid this reset if moving from edible to edible
 			// Improve the sync with appleskin flashing
-			if (heldItemOnPreview == null || currentHeldItemStack.isEdible() != heldItemOnPreview.isEdible()) {
+			if (heldItemOnPreview == null || currentHeldItemStack.getFoodProperties(null) != null) {
 				heldItemOnPreview = currentHeldItemStack.getItem();
 				resetFlash();
 			}
@@ -103,10 +105,10 @@ public class RenderThirstGui
 
 		// Same as hunger bar
 		int left = width / 2 + 91 + Config.Baked.hydrationBarOffsetX;
-		int top = height - forgeGui.rightHeight + Config.Baked.hydrationBarOffsetY;
+		int top = height - Minecraft.getInstance().gui.rightHeight + Config.Baked.hydrationBarOffsetY;
 
-		boolean hasThirstEffect = player.hasEffect(MobEffectRegistry.THIRST.get());
-		boolean hasHeatThirstEffect = player.hasEffect(MobEffectRegistry.HEAT_THIRST.get());
+		boolean hasThirstEffect = player.hasEffect(MobEffectRegistry.THIRST);
+		boolean hasHeatThirstEffect = player.hasEffect(MobEffectRegistry.HEAT_THIRST);
 		ThirstEffect thirstEffect = ThirstEffect.getEffect(hasThirstEffect, hasHeatThirstEffect);
 		ThirstEffect targetThirstEffect = ThirstEffect.getEffect(hasThirstEffect || heldItemThirst, hasHeatThirstEffect);
 

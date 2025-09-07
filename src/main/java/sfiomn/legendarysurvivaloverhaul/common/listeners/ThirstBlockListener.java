@@ -4,15 +4,16 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.mojang.serialization.JsonOps;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.SimpleJsonResourceReloadListener;
 import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.FluidState;
-import net.minecraftforge.fml.ModList;
-import net.minecraftforge.network.PacketDistributor;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.fml.ModList;
+
 import org.jetbrains.annotations.NotNull;
 import sfiomn.legendarysurvivaloverhaul.LegendarySurvivalOverhaul;
 import sfiomn.legendarysurvivaloverhaul.api.data.json.JsonThirstBlock;
@@ -38,7 +39,10 @@ public class ThirstBlockListener extends SimpleJsonResourceReloadListener implem
         resourceLocationJsonElementMap.forEach((key, json) -> {
             try {
                 var parsedJson = JsonThirstBlock.LIST_CODEC.parse(JsonOps.INSTANCE, json);
-                List<JsonThirstBlock> parsedThirstBlocks = parsedJson.getOrThrow(false, error -> LegendarySurvivalOverhaul.LOGGER.error("Failed parsing thirst block : {}", error));
+                List<JsonThirstBlock> parsedThirstBlocks = parsedJson.getOrThrow(error -> {
+                    LegendarySurvivalOverhaul.LOGGER.error("Failed parsing thirst block : {}", error);
+                    return new RuntimeException(error);
+                });
                 if (ModList.get().isLoaded(key.getNamespace()))
                     THIRST_BLOCKS.put(key, parsedThirstBlocks);
             } catch (Exception error) {
@@ -49,7 +53,7 @@ public class ThirstBlockListener extends SimpleJsonResourceReloadListener implem
         LegendarySurvivalOverhaul.LOGGER.info("Loaded {} thirst blocks", THIRST_BLOCKS.size());
     }
 
-    public static void sendDataToClient(PacketDistributor.PacketTarget packetTarget) {
+    public static void sendDataToClient(ServerPlayer packetTarget) {
         SyncThirstBlocksPacket.sendTo(packetTarget, THIRST_BLOCKS);
     }
 
@@ -68,7 +72,7 @@ public class ThirstBlockListener extends SimpleJsonResourceReloadListener implem
         List<JsonThirstBlock> jsonThirstBlocks = null;
         JsonThirstBlock defaultJct = null;
 
-        ResourceLocation blockRegistryName = ForgeRegistries.BLOCKS.getKey(block.getBlock());
+        ResourceLocation blockRegistryName = BuiltInRegistries.BLOCK.getKey(block.getBlock());
 
         if (blockRegistryName != null)
             jsonThirstBlocks = THIRST_BLOCKS.get(blockRegistryName);
@@ -89,7 +93,7 @@ public class ThirstBlockListener extends SimpleJsonResourceReloadListener implem
         List<JsonThirstBlock> jsonThirstBlocks = null;
         JsonThirstBlock defaultJct = null;
 
-        ResourceLocation fluidRegistryName = ForgeRegistries.FLUIDS.getKey(fluid.getType());
+        ResourceLocation fluidRegistryName = BuiltInRegistries.FLUID.getKey(fluid.getType());
 
         if (fluidRegistryName != null)
             jsonThirstBlocks = THIRST_BLOCKS.get(fluidRegistryName);

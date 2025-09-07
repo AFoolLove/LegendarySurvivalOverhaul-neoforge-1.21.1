@@ -6,11 +6,11 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonParseException;
 import com.mojang.serialization.JsonOps;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.SimpleJsonResourceReloadListener;
 import net.minecraft.util.profiling.ProfilerFiller;
-import net.minecraftforge.fml.ModList;
-import net.minecraftforge.network.PacketDistributor;
+import net.neoforged.fml.ModList;
 import org.jetbrains.annotations.NotNull;
 import sfiomn.legendarysurvivaloverhaul.LegendarySurvivalOverhaul;
 import sfiomn.legendarysurvivaloverhaul.api.data.json.JsonBodyPartResistance;
@@ -36,7 +36,10 @@ public class BodyPartResistanceItemListener extends SimpleJsonResourceReloadList
         resourceLocationJsonElementMap.forEach((key, json) -> {
             try {
                 var parsedJson = JsonBodyPartResistance.CODEC.parse(JsonOps.INSTANCE, json);
-                JsonBodyPartResistance bodyPartResistance = parsedJson.getOrThrow(false, error -> LegendarySurvivalOverhaul.LOGGER.error("Failed parsing body part resistance item : {}", error));
+                JsonBodyPartResistance bodyPartResistance = parsedJson.getOrThrow(error -> {
+                    LegendarySurvivalOverhaul.LOGGER.error("Failed parsing body part resistance item : {}", error);
+                    return new RuntimeException(error);
+                });
                 if (ModList.get().isLoaded(key.getNamespace()))
                     BODY_PART_RESISTANCE_ITEMS.put(key, bodyPartResistance);
             } catch (JsonParseException error) {
@@ -47,7 +50,7 @@ public class BodyPartResistanceItemListener extends SimpleJsonResourceReloadList
         LegendarySurvivalOverhaul.LOGGER.info("Loaded {} body part resistance items", BODY_PART_RESISTANCE_ITEMS.size());
     }
 
-    public static void sendDataToClient(PacketDistributor.PacketTarget packetTarget) {
+    public static void sendDataToClient(ServerPlayer packetTarget) {
         SyncBodyPartResistanceItemsPacket.sendTo(packetTarget, BODY_PART_RESISTANCE_ITEMS);
     }
 

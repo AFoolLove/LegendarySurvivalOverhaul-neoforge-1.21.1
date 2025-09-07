@@ -1,18 +1,24 @@
 package sfiomn.legendarysurvivaloverhaul.api.temperature;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
-import net.minecraftforge.registries.ForgeRegistries;
+
+import net.minecraft.world.level.biome.BiomeManager;
+import net.minecraft.world.level.biome.Biomes;
+import net.neoforged.neoforge.registries.RegistryManager;
 import org.jetbrains.annotations.Nullable;
 import sfiomn.legendarysurvivaloverhaul.LegendarySurvivalOverhaul;
 import sfiomn.legendarysurvivaloverhaul.api.data.json.JsonTemperatureBiomeOverride;
 import sfiomn.legendarysurvivaloverhaul.api.data.manager.TemperatureDataManager;
+import sfiomn.legendarysurvivaloverhaul.common.level.gen.ModBiomeModifiers;
 import sfiomn.legendarysurvivaloverhaul.util.WorldUtil;
 
 /**
@@ -100,19 +106,18 @@ public abstract class ModifierBase {
 		return Mth.lerp(WorldUtil.getUndergroundEffectAtPos(level, pos), temperature, undergroundTemperature);
 	}
 
-	protected float getHumidityForBiome(Biome biome)
+	protected float getHumidityForBiome(Holder<Biome> biome)
 	{
 		// Get the biome's humidity
 		// Dry biomes have humidity below 0.2
-
-		ResourceLocation name = ForgeRegistries.BIOMES.getKey(biome);
-		JsonTemperatureBiomeOverride biomeInfo = TemperatureDataManager.getBiome(name);
-		if (name != null && biomeInfo != null)
+		ResourceLocation location = biome.getKey().location();
+		JsonTemperatureBiomeOverride biomeInfo = TemperatureDataManager.getBiome(location);
+		if (biomeInfo != null)
 		{
 			return biomeInfo.isDry ? 0.1f : 0.5f;
 		}
 
-		return biome.getModifiedClimateSettings().downfall();
+		return biome.value().getModifiedClimateSettings().downfall();
 	}
 
 	// Clamp and normalize the temperature

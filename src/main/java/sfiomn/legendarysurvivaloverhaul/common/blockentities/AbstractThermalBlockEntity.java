@@ -2,7 +2,9 @@ package sfiomn.legendarysurvivaloverhaul.common.blockentities;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -21,7 +23,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BaseContainerBlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.registries.ForgeRegistries;
+
 import org.jetbrains.annotations.NotNull;
 import sfiomn.legendarysurvivaloverhaul.api.block.ThermalTypeEnum;
 import sfiomn.legendarysurvivaloverhaul.api.data.json.JsonTemperatureFuelItem;
@@ -147,13 +149,13 @@ public abstract class AbstractThermalBlockEntity extends BaseContainerBlockEntit
     }
 
     public boolean isItemValid(Item item) {
-        ResourceLocation registryNameItem = ForgeRegistries.ITEMS.getKey(item);
+        ResourceLocation registryNameItem = BuiltInRegistries.ITEM.getKey(item);
         JsonTemperatureFuelItem fuelInfo = TemperatureDataManager.getFuelItem(registryNameItem);
         return fuelInfo != null && fuelInfo.thermalType == thermalType && fuelInfo.duration > 0;
     }
 
     public int getFuelDuration(ItemStack item) {
-        ResourceLocation registryNameItem = ForgeRegistries.ITEMS.getKey(item.getItem());
+        ResourceLocation registryNameItem = BuiltInRegistries.ITEM.getKey(item.getItem());
         JsonTemperatureFuelItem fuelInfo = TemperatureDataManager.getFuelItem(registryNameItem);
         return fuelInfo != null ? fuelInfo.duration : 0;
     }
@@ -213,6 +215,11 @@ public abstract class AbstractThermalBlockEntity extends BaseContainerBlockEntit
         return true;
     }
 
+    @Override
+    public @NotNull NonNullList<ItemStack> getItems() {
+        return items;
+    }
+
     @Nonnull
     @Override
     public ItemStack getItem(int slot) {
@@ -229,6 +236,11 @@ public abstract class AbstractThermalBlockEntity extends BaseContainerBlockEntit
     @Override
     public ItemStack removeItemNoUpdate(int slot) {
         return ContainerHelper.takeItem(this.items, slot);
+    }
+
+    @Override
+    public void setItems(@NotNull NonNullList<ItemStack> items) {
+        this.items = items;
     }
 
     @Override
@@ -250,19 +262,19 @@ public abstract class AbstractThermalBlockEntity extends BaseContainerBlockEntit
     }
 
     @Override
-    public void load(@NotNull CompoundTag tag) {
-        super.load(tag);
+    protected void loadAdditional(@NotNull CompoundTag tag, HolderLookup.@NotNull Provider registries) {
+        super.loadAdditional(tag, registries);
         this.items = NonNullList.withSize(this.getContainerSize(), ItemStack.EMPTY);
-        ContainerHelper.loadAllItems(tag, this.items);
+        ContainerHelper.loadAllItems(tag, this.items, registries);
         this.fuelTime = tag.getInt("fuelTime");
         this.fuelDuration = tag.getInt("fuelDuration");
     }
 
     @Override
-    protected void saveAdditional(@NotNull CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void saveAdditional(@NotNull CompoundTag tag, @NotNull HolderLookup.Provider registries) {
+        super.saveAdditional(tag, registries);
         tag.putInt("fuelTime", this.fuelTime);
         tag.putInt("fuelDuration", this.fuelDuration);
-        ContainerHelper.saveAllItems(tag, this.items);
+        ContainerHelper.saveAllItems(tag, this.items, registries);
     }
 }

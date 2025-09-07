@@ -17,7 +17,7 @@ public class ThirstEffect extends MobEffect
 	}
 	
 	@Override
-	public void applyEffectTick(@NotNull LivingEntity entity, int amplifier)
+	public boolean applyEffectTick(@NotNull LivingEntity entity, int amplifier)
 	{
 		if(entity instanceof Player)
 		{
@@ -26,10 +26,11 @@ public class ThirstEffect extends MobEffect
 			// By default, twice strength of Hunger effect (0.005F)
 			thirstCapability.addThirstExhaustion((float) (Config.Baked.thirstEffectModifier * amplifier + 1));
 		}
+		return true;
 	}
 
 	@Override
-	public boolean isDurationEffectTick(int duration, int amplifier) {
+	public boolean shouldApplyEffectTickThisTick(int duration, int amplifier) {
 		// Apply thirsty effect every 50 ticks for amplifier 0
 		int time = 50 >> amplifier;
 		return time == 0 || duration % time == 0;

@@ -1,5 +1,6 @@
 package sfiomn.legendarysurvivaloverhaul.api.health;
 
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 
 import java.util.UUID;
@@ -86,7 +87,7 @@ public class HealthUtil
 	 * @param attributeUuid Uuid used to identify the modification
 	 * @param brokenHearts The new amount of broken hearts
 	 */
-	public static void updateBrokenHearts(Player player, UUID attributeUuid, int brokenHearts) {
-		internal.updateBrokenHearts(player, attributeUuid, brokenHearts);
+	public static void updateBrokenHearts(Player player, ResourceLocation attributeId, int brokenHearts) {
+		internal.updateBrokenHearts(player, attributeId, brokenHearts);
 	}
 }

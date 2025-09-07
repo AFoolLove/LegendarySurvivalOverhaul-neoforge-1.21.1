@@ -2,10 +2,11 @@ package sfiomn.legendarysurvivaloverhaul.data.builders;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.effect.MobEffect;
-import net.minecraftforge.registries.ForgeRegistries;
+
 import sfiomn.legendarysurvivaloverhaul.api.data.builder.IThirstData;
 
 import java.util.*;
@@ -42,7 +43,7 @@ public class ThirstData implements IThirstData {
 
     @Override
     public IThirstData addEffect(MobEffect effect, int durationInTick, float chance, int amplifier) {
-        ResourceLocation effectName = Objects.requireNonNull(ForgeRegistries.MOB_EFFECTS.getKey(effect));
+        ResourceLocation effectName = Objects.requireNonNull(BuiltInRegistries.MOB_EFFECT.getKey(effect));
         effects.add(new EffectData(effectName, Math.max(durationInTick, 0), Math.max(amplifier, 0), Mth.clamp(chance, 0, 1.0f)));
         return this;
     }

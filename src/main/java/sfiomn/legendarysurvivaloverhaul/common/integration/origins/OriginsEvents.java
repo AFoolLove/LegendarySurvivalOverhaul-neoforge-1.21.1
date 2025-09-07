@@ -1,16 +1,20 @@
 package sfiomn.legendarysurvivaloverhaul.common.integration.origins;
 
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-
-public class OriginsEvents {
-
-    @SubscribeEvent
-    public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
-        if (event.side.isServer()) {
-            if (event.player.tickCount % 20 == 0) {
-                OriginsUtil.assignOriginsFeatures(event.player);
-            }
-        }
-    }
-}
+//import net.minecraft.world.entity.player.Player;
+//import net.minecraft.world.level.Level;
+//import net.neoforged.bus.api.SubscribeEvent;
+//import net.neoforged.neoforge.event.tick.PlayerTickEvent;
+//
+//public class OriginsEvents {
+//
+//    @SubscribeEvent
+//    public static void onPlayerTick(PlayerTickEvent event) {
+//        Player player = event.getEntity();
+//        Level level = player.level();
+//        if (!level.isClientSide()) {
+//            if (player.tickCount % 20 == 0) {
+//                OriginsUtil.assignOriginsFeatures(player);
+//            }
+//        }
+//    }
+//}

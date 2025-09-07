@@ -32,18 +32,15 @@ public final class RenderUtil
 		float z = 0.0f;
 
 		Tesselator tesselator = Tesselator.getInstance();
-		BufferBuilder bufferBuilder = tesselator.getBuilder();
-		
-		bufferBuilder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
-		bufferBuilder.vertex(matrix, x, y + height, z)
-				.uv((texX * f), (texY + texHeight) * f1).color(255, 255, 255, 122).endVertex();
-		bufferBuilder.vertex(matrix, (x + width), y + height, z)
-				.uv((texX + texWidth) * f, (texY + texHeight) * f1).color(255, 255, 255, 122).endVertex();
-		bufferBuilder.vertex(matrix, (x + width), y, z)
-				.uv((texX + texWidth) * f,(texY * f1)).color(255, 255, 255, 122).endVertex();
-		bufferBuilder.vertex(matrix, x, y, z)
-				.uv((texX * f), (texY * f1)).color(255, 255, 255, 255).endVertex();
-		tesselator.end();
+		BufferBuilder bufferBuilder = tesselator.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
+		bufferBuilder.addVertex(matrix, x, y + height, z)
+				.setUv((texX * f), (texY + texHeight) * f1).setColor(255, 255, 255, 122);
+		bufferBuilder.addVertex(matrix, (x + width), y + height, z)
+				.setUv((texX + texWidth) * f, (texY + texHeight) * f1).setColor(255, 255, 255, 122);
+		bufferBuilder.addVertex(matrix, (x + width), y, z)
+				.setUv((texX + texWidth) * f,(texY * f1)).setColor(255, 255, 255, 122);
+		bufferBuilder.addVertex(matrix, x, y, z)
+				.setUv((texX * f), (texY * f1)).setColor(255, 255, 255, 255);
 	}
 
 	public static void drawTexturedModelRectWithAlpha(Matrix4f matrix, float x, float y, int width, int height, int texX, int texY, int texWidth, int texHeight, float alpha) {

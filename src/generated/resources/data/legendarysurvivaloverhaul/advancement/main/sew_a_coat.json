@@ -1,0 +1,103 @@
+{
+  "parent": "legendarysurvivaloverhaul:main/get_a_sewing_table",
+  "criteria": {
+    "recipe_crafted": {
+      "conditions": {
+        "ingredients": [
+          {
+            "components": {
+              "minecraft:custom_data": {
+                "Coat": "thermal1"
+              }
+            },
+            "items": "#c:armors"
+          },
+          {
+            "components": {
+              "minecraft:custom_data": {
+                "Coat": "thermal2"
+              }
+            },
+            "items": "#c:armors"
+          },
+          {
+            "components": {
+              "minecraft:custom_data": {
+                "Coat": "thermal3"
+              }
+            },
+            "items": "#c:armors"
+          },
+          {
+            "components": {
+              "minecraft:custom_data": {
+                "Coat": "cooling1"
+              }
+            },
+            "items": "#c:armors"
+          },
+          {
+            "components": {
+              "minecraft:custom_data": {
+                "Coat": "cooling2"
+              }
+            },
+            "items": "#c:armors"
+          },
+          {
+            "components": {
+              "minecraft:custom_data": {
+                "Coat": "cooling3"
+              }
+            },
+            "items": "#c:armors"
+          },
+          {
+            "components": {
+              "minecraft:custom_data": {
+                "Coat": "heating1"
+              }
+            },
+            "items": "#c:armors"
+          },
+          {
+            "components": {
+              "minecraft:custom_data": {
+                "Coat": "heating2"
+              }
+            },
+            "items": "#c:armors"
+          },
+          {
+            "components": {
+              "minecraft:custom_data": {
+                "Coat": "heating3"
+              }
+            },
+            "items": "#c:armors"
+          }
+        ],
+        "recipe_id": "legendarysurvivaloverhaul:sewing"
+      },
+      "trigger": "minecraft:recipe_crafted"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.legendarysurvivaloverhaul.sew_a_coat.description"
+    },
+    "icon": {
+      "count": 1,
+      "id": "legendarysurvivaloverhaul:cooling_coat_1"
+    },
+    "title": {
+      "translate": "advancement.legendarysurvivaloverhaul.sew_a_coat"
+    }
+  },
+  "requirements": [
+    [
+      "recipe_crafted"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

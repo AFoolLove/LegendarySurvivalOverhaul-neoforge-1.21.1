@@ -1,13 +1,15 @@
 package sfiomn.legendarysurvivaloverhaul.client.render;
 
+import sfiomn.legendarysurvivaloverhaul.util.GuiUtils;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.LayeredDraw;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.player.Player;
-import net.minecraftforge.client.gui.overlay.IGuiOverlay;
 import sfiomn.legendarysurvivaloverhaul.LegendarySurvivalOverhaul;
 import sfiomn.legendarysurvivaloverhaul.api.bodydamage.BodyPartEnum;
+import sfiomn.legendarysurvivaloverhaul.api.bodydamage.IBodyDamageCapability;
 import sfiomn.legendarysurvivaloverhaul.common.capabilities.bodydamage.BodyDamageCapability;
 import sfiomn.legendarysurvivaloverhaul.config.Config;
 import sfiomn.legendarysurvivaloverhaul.util.CapabilityUtil;
@@ -18,8 +20,8 @@ import java.util.Map;
 
 public class RenderBodyDamageGui
 {
-	private static BodyDamageCapability BODY_DAMAGE_CAP = null;
-	private static final ResourceLocation ICONS = new ResourceLocation(LegendarySurvivalOverhaul.MOD_ID, "textures/gui/overlay.png");
+	private static IBodyDamageCapability BODY_DAMAGE_CAP = null;
+	private static final ResourceLocation ICONS = ResourceLocation.fromNamespaceAndPath(LegendarySurvivalOverhaul.MOD_ID, "textures/gui/overlay.png");
 
 	private static final int BODY_MODEL_TEXTURE_WIDTH = 16;
 	private static final int BODY_MODEL_TEXTURE_HEIGHT = 32;
@@ -27,16 +29,18 @@ public class RenderBodyDamageGui
 	private static final Map<BodyPartEnum, Integer> flashCounters = new HashMap<>();
 	private static final Map<BodyPartEnum, Float> bodyPartHealth = new HashMap<>();
 	
-	public static IGuiOverlay BODY_DAMAGE_GUI = (forgeGui, guiGraphics, partialTicks, width, height) -> {
+	public static LayeredDraw.Layer BODY_DAMAGE_GUI = (guiGraphics, deltaTracker) -> {
 
 		if (Config.Baked.localizedBodyDamageEnabled
-				&& !Minecraft.getInstance().options.hideGui
-				&& forgeGui.shouldDrawSurvivalElements()) {
+			&& !Minecraft.getInstance().options.hideGui
+			&& GuiUtils.shouldDrawSurvivalElements()) {
 
-			Player player = forgeGui.getMinecraft().player;
+			Player player = Minecraft.getInstance().player;
+			int width = guiGraphics.guiWidth();
+			int height = guiGraphics.guiHeight();
 
 			if (player != null) {
-				forgeGui.setupOverlayRenderState(true, false);
+				GuiUtils.setupOverlayRenderState(true, false);
 
 				if (BODY_DAMAGE_CAP == null || player.tickCount % 20 == 0)
 					BODY_DAMAGE_CAP = CapabilityUtil.getBodyDamageCapability(player);
@@ -50,7 +54,7 @@ public class RenderBodyDamageGui
 		}
 	};
 	
-	public static void drawBodyDamage(GuiGraphics gui, Player player, BodyDamageCapability cap, int width, int height) {
+	public static void drawBodyDamage(GuiGraphics gui, Player player, IBodyDamageCapability cap, int width, int height) {
 		int x = width / 2 + 92 + Config.Baked.bodyDamageIndicatorOffsetX;
 		int y = height - 33 + Config.Baked.bodyDamageIndicatorOffsetY;
 

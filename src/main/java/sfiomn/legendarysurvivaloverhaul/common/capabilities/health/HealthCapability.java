@@ -1,11 +1,14 @@
 package sfiomn.legendarysurvivaloverhaul.common.capabilities.health;
 
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.util.Mth;
+import net.neoforged.neoforge.common.util.INBTSerializable;
+import org.jetbrains.annotations.UnknownNullability;
 import sfiomn.legendarysurvivaloverhaul.api.health.IHealthCapability;
 import sfiomn.legendarysurvivaloverhaul.config.Config;
 
-public class HealthCapability implements IHealthCapability
+public class HealthCapability implements IHealthCapability, INBTSerializable<CompoundTag>
 {
 	private float additionalHealth;
 	private float shieldHealth;
@@ -80,7 +83,17 @@ public class HealthCapability implements IHealthCapability
 	{
 		return packetTimer;
 	}
-	
+
+	@Override
+	public void deserializeNBT(HolderLookup.Provider provider, CompoundTag nbt) {
+		readNBT(nbt);
+	}
+
+	@Override
+	public @UnknownNullability CompoundTag serializeNBT(HolderLookup.Provider provider) {
+		return writeNBT();
+	}
+
 	public CompoundTag writeNBT() 
 	{
 		CompoundTag compound = new CompoundTag();

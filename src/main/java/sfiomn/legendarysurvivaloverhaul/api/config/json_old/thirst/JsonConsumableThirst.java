@@ -1,8 +1,12 @@
 package sfiomn.legendarysurvivaloverhaul.api.config.json_old.thirst;
 
 import com.google.gson.annotations.SerializedName;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.server.commands.data.DataCommands;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.CustomData;
+import org.apache.logging.log4j.core.appender.rolling.action.IfAccumulatedFileCount;
 import sfiomn.legendarysurvivaloverhaul.LegendarySurvivalOverhaul;
 import sfiomn.legendarysurvivaloverhaul.api.config.json_old.JsonPropertyValue;
 
@@ -45,10 +49,15 @@ public class JsonConsumableThirst
 	}
 
 	public boolean matchesNbt(ItemStack itemStack) {
-		if (itemStack.hasTag() == nbt.isEmpty())
+		if (nbt.isEmpty())
 			return false;
 
-		CompoundTag itemStackTag = itemStack.getTag();
+		CustomData customData = itemStack.get(DataComponents.CUSTOM_DATA);
+		if (customData == null || customData.isEmpty()) {
+			return false;
+		}
+
+		CompoundTag itemStackTag = customData.copyTag();
 
 		if (itemStackTag == null && nbt.isEmpty())
 			return true;

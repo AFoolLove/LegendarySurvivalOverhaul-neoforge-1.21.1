@@ -3,11 +3,14 @@ package sfiomn.legendarysurvivaloverhaul.network.packets;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.network.NetworkEvent;
-import net.minecraftforge.network.PacketDistributor;
+import net.minecraft.server.level.ServerPlayer;
+import net.neoforged.neoforge.network.PacketDistributor;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
+import org.jetbrains.annotations.NotNull;
+import sfiomn.legendarysurvivaloverhaul.LegendarySurvivalOverhaul;
 import sfiomn.legendarysurvivaloverhaul.api.data.json.JsonTemperatureBiomeOverride;
 import sfiomn.legendarysurvivaloverhaul.common.listeners.TemperatureBiomeListener;
 import sfiomn.legendarysurvivaloverhaul.network.NetworkHandler;
@@ -16,8 +19,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
 
-public class SyncTemperatureBiomesPacket
+public class SyncTemperatureBiomesPacket implements CustomPacketPayload
 {
+	public static final Type<SyncTemperatureBiomesPacket> TYPE = new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(LegendarySurvivalOverhaul.MOD_ID, "sync_temperature_biomes"));
+	public static final StreamCodec<FriendlyByteBuf, SyncTemperatureBiomesPacket> STREAM_CODEC =
+			CustomPacketPayload.codec(SyncTemperatureBiomesPacket::encode, SyncTemperatureBiomesPacket::decode);
+
 	private final Map<ResourceLocation, JsonTemperatureBiomeOverride> temperatureBiomes;
 	private final int size;
 
@@ -25,6 +32,11 @@ public class SyncTemperatureBiomesPacket
 	{
 		this.temperatureBiomes = Map.copyOf(temperatureBiomes);
 		this.size = temperatureBiomes.size();
+	}
+
+	@Override
+	public @NotNull Type<? extends CustomPacketPayload> type() {
+		return TYPE;
 	}
 
 	public static void encode(SyncTemperatureBiomesPacket message, FriendlyByteBuf buffer)
@@ -53,29 +65,15 @@ public class SyncTemperatureBiomesPacket
 		return new SyncTemperatureBiomesPacket(temperatureBiomes);
 	}
 	
-	public static void handle(SyncTemperatureBiomesPacket message, Supplier<NetworkEvent.Context> supplier)
+	public static void handle(SyncTemperatureBiomesPacket message, IPayloadContext context)
 	{
-		final NetworkEvent.Context context = supplier.get();
-		context.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> syncTemperatureBiomes(message.temperatureBiomes)));
-		
-		supplier.get().setPacketHandled(true);
+		if (context.flow().isClientbound()) {
+			context.enqueueWork(() -> {
+				TemperatureBiomeListener.acceptServerTemperatureBiomes(message.temperatureBiomes);
+			});
+		}
 	}
-
-	public static DistExecutor.SafeRunnable syncTemperatureBiomes(Map<ResourceLocation, JsonTemperatureBiomeOverride> temperatureBiomes)
-	{
-		return new DistExecutor.SafeRunnable()
-		{
-			private static final long serialVersionUID = 1L;
-
-			@Override
-			public void run()
-			{
-				TemperatureBiomeListener.acceptServerTemperatureBiomes(temperatureBiomes);
-			}
-		};
-	}
-
-	public static void sendTo(PacketDistributor.PacketTarget packetDistributor, Map<ResourceLocation, JsonTemperatureBiomeOverride> temperatureBiomes) {
-		NetworkHandler.INSTANCE.send(packetDistributor, new SyncTemperatureBiomesPacket(temperatureBiomes));
+	public static void sendTo(ServerPlayer player, Map<ResourceLocation, JsonTemperatureBiomeOverride> temperatureBiomes) {
+		PacketDistributor.sendToPlayer(player, new SyncTemperatureBiomesPacket(temperatureBiomes));
 	}
 }

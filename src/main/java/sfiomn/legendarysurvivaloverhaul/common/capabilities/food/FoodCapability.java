@@ -1,14 +1,19 @@
 package sfiomn.legendarysurvivaloverhaul.common.capabilities.food;
 
+import net.minecraft.core.HolderLookup;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.event.TickEvent;
+import net.neoforged.neoforge.common.util.INBTSerializable;
+import net.neoforged.neoforge.event.tick.PlayerTickEvent;
+import org.checkerframework.checker.units.qual.C;
+import org.jetbrains.annotations.UnknownNullability;
 import sfiomn.legendarysurvivaloverhaul.api.food.IFoodCapability;
 import sfiomn.legendarysurvivaloverhaul.config.Config;
 
 
-public class FoodCapability implements IFoodCapability
+public class FoodCapability implements IFoodCapability, INBTSerializable<CompoundTag>
 {
 	//Unsaved data
 	private Vec3 oldPos;
@@ -27,9 +32,9 @@ public class FoodCapability implements IFoodCapability
 		this.wasSprinting = false;
 	}
 
-	public void tickUpdate(Player player, Level world, TickEvent.Phase phase)
+	public void tickUpdate(Player player, Level world, PlayerTickEvent phase)
 	{
-		if(phase == TickEvent.Phase.START) return;
+		if(phase instanceof PlayerTickEvent.Pre) return;
 
 		if (oldPos == null)
 			oldPos = player.position();
@@ -54,5 +59,15 @@ public class FoodCapability implements IFoodCapability
 				this.wasSprinting = player.isSprinting();
 			}
 		}
+	}
+
+	@Override
+	public void deserializeNBT(HolderLookup.Provider provider, CompoundTag nbt) {
+
+	}
+
+	@Override
+	public @UnknownNullability CompoundTag serializeNBT(HolderLookup.Provider provider) {
+		return new CompoundTag();
 	}
 }

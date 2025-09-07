@@ -1,10 +1,11 @@
 package sfiomn.legendarysurvivaloverhaul.client.render;
 
+import sfiomn.legendarysurvivaloverhaul.util.GuiUtils;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.LayeredDraw;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
-import net.minecraftforge.client.gui.overlay.IGuiOverlay;
 import sfiomn.legendarysurvivaloverhaul.LegendarySurvivalOverhaul;
 import sfiomn.legendarysurvivaloverhaul.common.capabilities.wetness.WetnessCapability;
 import sfiomn.legendarysurvivaloverhaul.common.integration.curios.CuriosUtil;
@@ -18,7 +19,7 @@ public class RenderWetnessGui
 	private static WetnessCapability WETNESS_CAP = null;
 	private static final Random rand = new Random();
 
-	private static final ResourceLocation ICONS = new ResourceLocation(LegendarySurvivalOverhaul.MOD_ID, "textures/gui/overlay.png");
+	private static final ResourceLocation ICONS = ResourceLocation.fromNamespaceAndPath(LegendarySurvivalOverhaul.MOD_ID, "textures/gui/overlay.png");
 	
 	private static final int WETNESS_TEXTURE_POS_Y = 96;
 	
@@ -30,16 +31,18 @@ public class RenderWetnessGui
 	private static WetnessIcon lastWetnessIcon;
 	private static int flashCounter = -1;
 	
-	public static IGuiOverlay WETNESS_GUI = (forgeGui, guiGraphics, partialTicks, width, height) -> {
+	public static LayeredDraw.Layer WETNESS_GUI = (guiGraphics, deltaTracker) -> {
 		if (Config.Baked.wetnessEnabled
-				&& !Minecraft.getInstance().options.hideGui
-				&& forgeGui.shouldDrawSurvivalElements()) {
-			Player player = forgeGui.getMinecraft().player;
+			&& !Minecraft.getInstance().options.hideGui
+			&& GuiUtils.shouldDrawSurvivalElements()) {
+			Player player = Minecraft.getInstance().player;
+			int width = guiGraphics.guiWidth();
+			int height = guiGraphics.guiHeight();
 
 			if (player != null) {
 				rand.setSeed(player.tickCount * 445L);
 
-				forgeGui.setupOverlayRenderState(true, false);
+				GuiUtils.setupOverlayRenderState(true, false);
 
 				Minecraft.getInstance().getProfiler().push("wetness_gui");
 				drawWetness(guiGraphics, player, width, height);

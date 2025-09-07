@@ -1,48 +1,42 @@
 package sfiomn.legendarysurvivaloverhaul.network;
 
-import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.network.NetworkRegistry;
-import net.minecraftforge.network.simple.SimpleChannel;
-import sfiomn.legendarysurvivaloverhaul.LegendarySurvivalOverhaul;
+import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
+import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 import sfiomn.legendarysurvivaloverhaul.network.packets.*;
 
 public class NetworkHandler
 {
 	private static final String PROTOCOL_VERSION = "1";
 	
-	public static final SimpleChannel INSTANCE = NetworkRegistry.newSimpleChannel(
-			new ResourceLocation(LegendarySurvivalOverhaul.MOD_ID, "main"),
-			() -> PROTOCOL_VERSION,
-			PROTOCOL_VERSION::equals,
-			PROTOCOL_VERSION::equals);
-	
-	public static void register()
+	public static PayloadRegistrar INSTANCE;
+
+	public static void register(RegisterPayloadHandlersEvent event)
 	{
-		int id = -1;
-		
-		INSTANCE.registerMessage(id++, UpdateTemperaturesPacket.class, UpdateTemperaturesPacket::encode, UpdateTemperaturesPacket::decode, UpdateTemperaturesPacket::handle);
-		INSTANCE.registerMessage(id++, UpdateWetnessPacket.class, UpdateWetnessPacket::encode, UpdateWetnessPacket::decode, UpdateWetnessPacket::handle);
-		INSTANCE.registerMessage(id++, UpdateThirstPacket.class, UpdateThirstPacket::encode, UpdateThirstPacket::decode, UpdateThirstPacket::handle);
-		INSTANCE.registerMessage(id++, UpdateHeartsPacket.class, UpdateHeartsPacket::encode, UpdateHeartsPacket::decode, UpdateHeartsPacket::handle);
-		INSTANCE.registerMessage(id++, UpdateBodyDamagePacket.class, UpdateBodyDamagePacket::encode, UpdateBodyDamagePacket::decode, UpdateBodyDamagePacket::handle);
-		INSTANCE.registerMessage(id++, DrinkBlockFluidMessage.class, DrinkBlockFluidMessage::encode, DrinkBlockFluidMessage::decode, DrinkBlockFluidMessage::handle);
-		INSTANCE.registerMessage(id++, BodyPartHealingTimeMessage.class, BodyPartHealingTimeMessage::encode, BodyPartHealingTimeMessage::decode, BodyPartHealingTimeMessage::handle);
+		INSTANCE = event.registrar(PROTOCOL_VERSION);
 
-		INSTANCE.registerMessage(id++, SyncTemperatureConsumablesPacket.class, SyncTemperatureConsumablesPacket::encode, SyncTemperatureConsumablesPacket::decode, SyncTemperatureConsumablesPacket::handle);
-		INSTANCE.registerMessage(id++, SyncTemperatureConsumableBlocksPacket.class, SyncTemperatureConsumableBlocksPacket::encode, SyncTemperatureConsumableBlocksPacket::decode, SyncTemperatureConsumableBlocksPacket::handle);
-		INSTANCE.registerMessage(id++, SyncTemperatureBlocksPacket.class, SyncTemperatureBlocksPacket::encode, SyncTemperatureBlocksPacket::decode, SyncTemperatureBlocksPacket::handle);
-		INSTANCE.registerMessage(id++, SyncTemperatureItemsPacket.class, SyncTemperatureItemsPacket::encode, SyncTemperatureItemsPacket::decode, SyncTemperatureItemsPacket::handle);
-		INSTANCE.registerMessage(id++, SyncTemperatureBiomesPacket.class, SyncTemperatureBiomesPacket::encode, SyncTemperatureBiomesPacket::decode, SyncTemperatureBiomesPacket::handle);
-		INSTANCE.registerMessage(id++, SyncTemperatureFuelItemsPacket.class, SyncTemperatureFuelItemsPacket::encode, SyncTemperatureFuelItemsPacket::decode, SyncTemperatureFuelItemsPacket::handle);
-		INSTANCE.registerMessage(id++, SyncTemperatureMountsPacket.class, SyncTemperatureMountsPacket::encode, SyncTemperatureMountsPacket::decode, SyncTemperatureMountsPacket::handle);
-		INSTANCE.registerMessage(id++, SyncTemperatureDimensionsPacket.class, SyncTemperatureDimensionsPacket::encode, SyncTemperatureDimensionsPacket::decode, SyncTemperatureDimensionsPacket::handle);
-		INSTANCE.registerMessage(id++, SyncTemperatureOriginsPacket.class, SyncTemperatureOriginsPacket::encode, SyncTemperatureOriginsPacket::decode, SyncTemperatureOriginsPacket::handle);
+		INSTANCE.playBidirectional(UpdateTemperaturesPacket.TYPE, UpdateTemperaturesPacket.STREAM_CODEC, UpdateTemperaturesPacket::handle);
+		INSTANCE.playBidirectional(UpdateWetnessPacket.TYPE, UpdateWetnessPacket.STREAM_CODEC, UpdateWetnessPacket::handle);
+		INSTANCE.playBidirectional(UpdateThirstPacket.TYPE, UpdateThirstPacket.STREAM_CODEC, UpdateThirstPacket::handle);
+		INSTANCE.playBidirectional(UpdateHeartsPacket.TYPE, UpdateHeartsPacket.STREAM_CODEC, UpdateHeartsPacket::handle);
+		INSTANCE.playBidirectional(UpdateBodyDamagePacket.TYPE, UpdateBodyDamagePacket.STREAM_CODEC, UpdateBodyDamagePacket::handle);
+		INSTANCE.playToServer(DrinkBlockFluidMessage.TYPE, DrinkBlockFluidMessage.STREAM_CODEC, DrinkBlockFluidMessage::handle);
+		INSTANCE.playBidirectional(BodyPartHealingTimeMessage.TYPE, BodyPartHealingTimeMessage.STREAM_CODEC, BodyPartHealingTimeMessage::handle);
 
-		INSTANCE.registerMessage(id++, SyncThirstBlocksPacket.class, SyncThirstBlocksPacket::encode, SyncThirstBlocksPacket::decode, SyncThirstBlocksPacket::handle);
-		INSTANCE.registerMessage(id++, SyncThirstConsumablesPacket.class, SyncThirstConsumablesPacket::encode, SyncThirstConsumablesPacket::decode, SyncThirstConsumablesPacket::handle);
+		INSTANCE.playBidirectional(SyncTemperatureConsumablesPacket.TYPE, SyncTemperatureConsumablesPacket.STREAM_CODEC, SyncTemperatureConsumablesPacket::handle);
+		INSTANCE.playBidirectional(SyncTemperatureConsumableBlocksPacket.TYPE, SyncTemperatureConsumableBlocksPacket.STREAM_CODEC, SyncTemperatureConsumableBlocksPacket::handle);
+		INSTANCE.playBidirectional(SyncTemperatureBlocksPacket.TYPE, SyncTemperatureBlocksPacket.STREAM_CODEC, SyncTemperatureBlocksPacket::handle);
+		INSTANCE.playBidirectional(SyncTemperatureItemsPacket.TYPE, SyncTemperatureItemsPacket.STREAM_CODEC, SyncTemperatureItemsPacket::handle);
+		INSTANCE.playBidirectional(SyncTemperatureBiomesPacket.TYPE, SyncTemperatureBiomesPacket.STREAM_CODEC, SyncTemperatureBiomesPacket::handle);
+		INSTANCE.playBidirectional(SyncTemperatureFuelItemsPacket.TYPE, SyncTemperatureFuelItemsPacket.STREAM_CODEC, SyncTemperatureFuelItemsPacket::handle);
+		INSTANCE.playBidirectional(SyncTemperatureMountsPacket.TYPE, SyncTemperatureMountsPacket.STREAM_CODEC, SyncTemperatureMountsPacket::handle);
+		INSTANCE.playBidirectional(SyncTemperatureDimensionsPacket.TYPE, SyncTemperatureDimensionsPacket.STREAM_CODEC, SyncTemperatureDimensionsPacket::handle);
+		INSTANCE.playBidirectional(SyncTemperatureOriginsPacket.TYPE, SyncTemperatureOriginsPacket.STREAM_CODEC, SyncTemperatureOriginsPacket::handle);
 
-		INSTANCE.registerMessage(id++, SyncBodyDamageHealingConsumablesPacket.class, SyncBodyDamageHealingConsumablesPacket::encode, SyncBodyDamageHealingConsumablesPacket::decode, SyncBodyDamageHealingConsumablesPacket::handle);
-		INSTANCE.registerMessage(id++, SyncBodyPartsDamageSourcesPacket.class, SyncBodyPartsDamageSourcesPacket::encode, SyncBodyPartsDamageSourcesPacket::decode, SyncBodyPartsDamageSourcesPacket::handle);
-		INSTANCE.registerMessage(id++, SyncBodyPartResistanceItemsPacket.class, SyncBodyPartResistanceItemsPacket::encode, SyncBodyPartResistanceItemsPacket::decode, SyncBodyPartResistanceItemsPacket::handle);
+		INSTANCE.playBidirectional(SyncThirstBlocksPacket.TYPE, SyncThirstBlocksPacket.STREAM_CODEC, SyncThirstBlocksPacket::handle);
+		INSTANCE.playBidirectional(SyncThirstConsumablesPacket.TYPE, SyncThirstConsumablesPacket.STREAM_CODEC, SyncThirstConsumablesPacket::handle);
+
+		INSTANCE.playBidirectional(SyncBodyDamageHealingConsumablesPacket.TYPE, SyncBodyDamageHealingConsumablesPacket.STREAM_CODEC, SyncBodyDamageHealingConsumablesPacket::handle);
+		INSTANCE.playBidirectional(SyncBodyPartsDamageSourcesPacket.TYPE, SyncBodyPartsDamageSourcesPacket.STREAM_CODEC, SyncBodyPartsDamageSourcesPacket::handle);
+		INSTANCE.playBidirectional(SyncBodyPartResistanceItemsPacket.TYPE, SyncBodyPartResistanceItemsPacket.STREAM_CODEC, SyncBodyPartResistanceItemsPacket::handle);
 	}
 }

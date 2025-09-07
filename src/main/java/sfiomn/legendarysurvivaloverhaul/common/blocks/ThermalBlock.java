@@ -1,5 +1,8 @@
 package sfiomn.legendarysurvivaloverhaul.common.blocks;
 
+import com.mojang.serialization.MapCodec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
+import dev.architectury.hooks.client.screen.ScreenHooks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -11,10 +14,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.BaseEntityBlock;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.EntityBlock;
-import net.minecraft.world.level.block.RenderShape;
+import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
@@ -24,7 +24,8 @@ import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraftforge.network.NetworkHooks;
+import net.neoforged.neoforge.common.CommonHooks;
+import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 import sfiomn.legendarysurvivaloverhaul.api.block.ThermalTypeEnum;
 import sfiomn.legendarysurvivaloverhaul.common.blockentities.AbstractThermalBlockEntity;
@@ -33,6 +34,10 @@ import sfiomn.legendarysurvivaloverhaul.common.blockentities.HeaterBlockEntity;
 
 public class ThermalBlock extends BaseEntityBlock implements EntityBlock
 {
+	public static final MapCodec<ThermalBlock> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
+			ThermalTypeEnum.CODEC.fieldOf("thermalType").forGetter(block -> block.thermalType), propertiesCodec()
+	).apply(instance, ThermalBlock::new));
+
 	public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
 	public static final BooleanProperty LIT = BlockStateProperties.LIT;
 	private static final VoxelShape[] SHAPES = new VoxelShape[]
@@ -56,7 +61,12 @@ public class ThermalBlock extends BaseEntityBlock implements EntityBlock
 				.setValue(FACING, Direction.NORTH)
 				.setValue(LIT, Boolean.FALSE));
 	}
-	
+
+	@Override
+	protected @NotNull MapCodec<? extends BaseEntityBlock> codec() {
+		return CODEC;
+	}
+
 	public BlockState getStateForPlacement(BlockPlaceContext context)
 	{
 		return this.defaultBlockState().setValue(FACING, context.getHorizontalDirection());
@@ -78,8 +88,9 @@ public class ThermalBlock extends BaseEntityBlock implements EntityBlock
 		return SHAPES[state.getValue(FACING).get3DDataValue()];
 	}
 
+
 	@Override
-	public @NotNull InteractionResult use(@NotNull BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult rayTrace) {
+	protected @NotNull InteractionResult useWithoutItem(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos, @NotNull Player player, @NotNull BlockHitResult hitResult) {
 		if (level.isClientSide) {
 			return InteractionResult.PASS;
 		}
@@ -91,9 +102,11 @@ public class ThermalBlock extends BaseEntityBlock implements EntityBlock
 		BlockEntity blockEntity = level.getBlockEntity(pos);
 
 		if (blockEntity instanceof HeaterBlockEntity be && player instanceof ServerPlayer) {
-            NetworkHooks.openScreen((ServerPlayer) player, be, pos);
+//            NetworkHooks.openScreen((ServerPlayer) player, be, pos);
+			player.openMenu(be, pos);
 		} else if (blockEntity instanceof CoolerBlockEntity be && player instanceof ServerPlayer) {
-            NetworkHooks.openScreen((ServerPlayer) player, be, pos);
+//            NetworkHooks.openScreen((ServerPlayer) player, be, pos);
+			player.openMenu(be, pos);
 		} else {
 			throw new IllegalStateException("Tile entity container is missing!");
 		}

@@ -1,15 +1,16 @@
 package sfiomn.legendarysurvivaloverhaul.client.render;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import sfiomn.legendarysurvivaloverhaul.util.GuiUtils;
+import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.LayeredDraw;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.gui.overlay.ForgeGui;
-import net.minecraftforge.client.gui.overlay.IGuiOverlay;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import sfiomn.legendarysurvivaloverhaul.LegendarySurvivalOverhaul;
 import sfiomn.legendarysurvivaloverhaul.api.health.HealthUtil;
 import sfiomn.legendarysurvivaloverhaul.common.capabilities.health.HealthCapability;
@@ -24,8 +25,8 @@ public class RenderHealthGui
 	private static HealthCapability HEALTH_CAP = null;
 	private static final Random rand = new Random();
 
-	public static final ResourceLocation ICONS = new ResourceLocation(LegendarySurvivalOverhaul.MOD_ID, "textures/gui/overlay.png");
-	protected static final ResourceLocation MINECRAFT_GUI_ICONS_LOCATION = new ResourceLocation("textures/gui/icons.png");
+	public static final ResourceLocation ICONS = ResourceLocation.fromNamespaceAndPath(LegendarySurvivalOverhaul.MOD_ID, "textures/gui/overlay.png");
+	protected static final ResourceLocation MINECRAFT_GUI_ICONS_LOCATION = ResourceLocation.withDefaultNamespace("textures/gui/icons.png");
 
 	// Row position on the overlay sheet
 	private static final int HEART_TEXTURE_POS_Y = 146;
@@ -35,20 +36,25 @@ public class RenderHealthGui
 	private static final int HEART_TEXTURE_WIDTH = 9;
 	private static final int HEART_TEXTURE_HEIGHT = 9;
 
-	public static final IGuiOverlay HEALTH_GUI = (forgeGui, guiGraphics, partialTicks, width, height) -> {
+	public static final LayeredDraw.Layer HEALTH_GUI = (guiGraphics, deltaTracker) -> {
 		if (Config.Baked.healthOverhaulEnabled
-				&& !Minecraft.getInstance().options.hideGui
-				&& forgeGui.shouldDrawSurvivalElements()) {
-			Player player = forgeGui.getMinecraft().player;
+			&& !Minecraft.getInstance().options.hideGui
+			&& GuiUtils.shouldDrawSurvivalElements()) {
+
+
+			Player player = Minecraft.getInstance().player;
+
+			int width = guiGraphics.guiWidth();
+			int height = guiGraphics.guiHeight();
 
 			if (player != null) {
 
 				rand.setSeed(player.tickCount * 445L);
-				forgeGui.setupOverlayRenderState(true, false);
+				GuiUtils.setupOverlayRenderState(true, false);
 
 				Minecraft.getInstance().getProfiler().push("health");
 
-				drawHealthBar(forgeGui, guiGraphics, player, width, height);
+				drawHealthBar(guiGraphics, deltaTracker, player, width, height);
 				Minecraft.getInstance().getProfiler().pop();
 
 				RenderSystem.depthMask(true);
@@ -56,8 +62,8 @@ public class RenderHealthGui
 			}
 		}
 	};
-	
-	public static void drawHealthBar(ForgeGui forgeGui, GuiGraphics gui, Player player, int width, int height) {
+
+	public static void drawHealthBar(GuiGraphics gui, DeltaTracker deltaTracker, Player player, int width, int height) {
 		if (HEALTH_CAP == null || player.tickCount % 20 == 0)
 			HEALTH_CAP = CapabilityUtil.getHealthCapability(player);
 
@@ -68,7 +74,8 @@ public class RenderHealthGui
 			return;
 
 		int left = width / 2 - 91; // Same x offset as the health bar
-		int top = height - forgeGui.leftHeight;
+		Minecraft minecraft = Minecraft.getInstance();
+		int top = height - minecraft.gui.leftHeight;
 
 		int playerHearts = 0;
 
@@ -84,12 +91,12 @@ public class RenderHealthGui
 			if (playerHearts > 0) {
 				totalHearts += playerHearts;
 				top += 10;
-				forgeGui.leftHeight -= 10;
+				minecraft.gui.leftHeight -= 10;
 			}
 		}
 		int healthRows = Mth.ceil((totalHearts)  / 10.0F);
 
-		forgeGui.leftHeight += healthRows * 10;
+		minecraft.gui.leftHeight += healthRows * 10;
 
 		renderHearts(gui, left, top, 10, playerHearts, brokenHearts, Mth.ceil(player.getHealth()), shieldHealth);
 	}

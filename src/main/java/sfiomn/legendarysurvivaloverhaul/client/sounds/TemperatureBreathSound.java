@@ -26,8 +26,8 @@ public class TemperatureBreathSound {
 
         TemperatureEnum temperatureEnum = CapabilityUtil.getTempCapability(player).getTemperatureEnum();
 
-        if ((temperatureEnum != TemperatureEnum.FROSTBITE || player.hasEffect(MobEffectRegistry.COLD_IMMUNITY.get())) &&
-                (temperatureEnum != TemperatureEnum.HEAT_STROKE || player.hasEffect(MobEffectRegistry.HEAT_IMMUNITY.get()))) {
+        if ((temperatureEnum != TemperatureEnum.FROSTBITE || player.hasEffect(MobEffectRegistry.COLD_IMMUNITY)) &&
+                (temperatureEnum != TemperatureEnum.HEAT_STROKE || player.hasEffect(MobEffectRegistry.HEAT_IMMUNITY))) {
             reset(player);
             return;
         }

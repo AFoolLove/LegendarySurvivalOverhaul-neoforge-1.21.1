@@ -4,14 +4,15 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.mojang.serialization.JsonOps;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.SimpleJsonResourceReloadListener;
 import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.fml.ModList;
-import net.minecraftforge.network.PacketDistributor;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.fml.ModList;
+
 import org.jetbrains.annotations.NotNull;
 import sfiomn.legendarysurvivaloverhaul.LegendarySurvivalOverhaul;
 import sfiomn.legendarysurvivaloverhaul.api.data.json.JsonThirstConsumable;
@@ -37,7 +38,10 @@ public class ThirstConsumableListener extends SimpleJsonResourceReloadListener i
         resourceLocationJsonElementMap.forEach((key, json) -> {
             try {
                 var parsedJson = JsonThirstConsumable.LIST_CODEC.parse(JsonOps.INSTANCE, json);
-                List<JsonThirstConsumable> parsedThirstConsumables = parsedJson.getOrThrow(false, error -> LegendarySurvivalOverhaul.LOGGER.error("Failed parsing thirst consumable : {}", error));
+                List<JsonThirstConsumable> parsedThirstConsumables = parsedJson.getOrThrow(error -> {
+                    LegendarySurvivalOverhaul.LOGGER.error("Failed parsing thirst consumable : {}", error);
+                    return new RuntimeException(error);
+                });
                 if (ModList.get().isLoaded(key.getNamespace()))
                     THIRST_CONSUMABLES.put(key, parsedThirstConsumables);
             } catch (Exception error) {
@@ -48,7 +52,7 @@ public class ThirstConsumableListener extends SimpleJsonResourceReloadListener i
         LegendarySurvivalOverhaul.LOGGER.info("Loaded {} thirst consumables", THIRST_CONSUMABLES.size());
     }
 
-    public static void sendDataToClient(PacketDistributor.PacketTarget packetTarget) {
+    public static void sendDataToClient(ServerPlayer packetTarget) {
         SyncThirstConsumablesPacket.sendTo(packetTarget, THIRST_CONSUMABLES);
     }
 
@@ -67,7 +71,7 @@ public class ThirstConsumableListener extends SimpleJsonResourceReloadListener i
         List<JsonThirstConsumable> jsonThirstConsumables = null;
         JsonThirstConsumable defaultJct = null;
 
-        ResourceLocation itemRegistryName = ForgeRegistries.ITEMS.getKey(itemStack.getItem());
+        ResourceLocation itemRegistryName = BuiltInRegistries.ITEM.getKey(itemStack.getItem());
 
         if (itemRegistryName != null)
             jsonThirstConsumables = THIRST_CONSUMABLES.get(itemRegistryName);

@@ -1,5 +1,6 @@
 package sfiomn.legendarysurvivaloverhaul.common.blocks;
 
+import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionHand;
@@ -11,6 +12,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.SoundType;
+import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.material.MapColor;
@@ -18,9 +20,11 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import org.jetbrains.annotations.NotNull;
 import sfiomn.legendarysurvivaloverhaul.registry.BlockRegistry;
 
 public class HeaterTopBlock extends HorizontalDirectionalBlock {
+    public static final MapCodec<HeaterTopBlock> CODEC = simpleCodec(HeaterTopBlock::new);
 
     public static final Properties properties = getProperties();
 
@@ -30,12 +34,17 @@ public class HeaterTopBlock extends HorizontalDirectionalBlock {
 
     private static final VoxelShape XZ_AXIS_AABB = Shapes.or(BASE, TUBE, TOP);
 
-    public HeaterTopBlock()
+    public HeaterTopBlock(BlockBehaviour.Properties properties)
     {
-        super(properties);
+        super(HeaterTopBlock.properties);
 
         this.registerDefaultState(this.getStateDefinition().any()
                 .setValue(FACING, Direction.NORTH));
+    }
+
+    @Override
+    protected @NotNull MapCodec<? extends HorizontalDirectionalBlock> codec() {
+        return CODEC;
     }
 
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder)
@@ -58,14 +67,12 @@ public class HeaterTopBlock extends HorizontalDirectionalBlock {
         return XZ_AXIS_AABB;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
-    public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult rayTraceResult)
-    {
+    protected @NotNull InteractionResult useWithoutItem(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos, @NotNull Player player, @NotNull BlockHitResult rayTraceResult) {
         BlockState bottomState = level.getBlockState(pos.below());
         if (bottomState.is(BlockRegistry.HEATER.get()))
         {
-            ((HeaterBaseBlock) bottomState.getBlock()).use(bottomState, level, pos.below(), player, hand, rayTraceResult);
+            ((HeaterBaseBlock) bottomState.getBlock()).useWithoutItem(bottomState, level, pos.below(), player, rayTraceResult);
         }
         return InteractionResult.SUCCESS;
     }

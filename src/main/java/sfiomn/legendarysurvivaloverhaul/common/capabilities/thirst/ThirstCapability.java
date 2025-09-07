@@ -1,11 +1,14 @@
 package sfiomn.legendarysurvivaloverhaul.common.capabilities.thirst;
 
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.event.TickEvent;
+import net.neoforged.neoforge.common.util.INBTSerializable;
+import net.neoforged.neoforge.event.tick.PlayerTickEvent;
+import org.jetbrains.annotations.UnknownNullability;
 import sfiomn.legendarysurvivaloverhaul.api.ModDamageTypes;
 import sfiomn.legendarysurvivaloverhaul.api.thirst.IThirstCapability;
 import sfiomn.legendarysurvivaloverhaul.config.Config;
@@ -13,7 +16,7 @@ import sfiomn.legendarysurvivaloverhaul.registry.MobEffectRegistry;
 import sfiomn.legendarysurvivaloverhaul.util.DifficultyUtil;
 
 
-public class ThirstCapability implements IThirstCapability
+public class ThirstCapability implements IThirstCapability, INBTSerializable<CompoundTag>
 {
 	public static int MAX_HYDRATION = 20;
 	public static float MAX_SATURATION = 20.0f;
@@ -55,12 +58,12 @@ public class ThirstCapability implements IThirstCapability
 	}
 
 	@Override
-	public void tickUpdate(Player player, Level level, TickEvent.Phase phase)
+	public void tickUpdate(Player player, Level level, PlayerTickEvent phase)
 	{
 		if (getThirstTickTimer() == -1)
 			return;
 
-		if(phase == TickEvent.Phase.START)
+		if(phase instanceof PlayerTickEvent.Pre)
 		{
 			packetTimer++;
 			return;
@@ -74,7 +77,7 @@ public class ThirstCapability implements IThirstCapability
 		{
 			this.setThirstTickTimer(0);
 
-			if (player.hasEffect(MobEffectRegistry.HYDRATION_FILL.get())) {
+			if (player.hasEffect(MobEffectRegistry.HYDRATION_FILL)) {
 				if (getHydrationLevel() < MAX_HYDRATION) {
 					addHydrationLevel(1);
 				}
@@ -103,7 +106,7 @@ public class ThirstCapability implements IThirstCapability
 			// Exhausted, do a thirst tick
 			this.addThirstExhaustion(-4.0f);
 
-			if (this.getSaturationLevel() > 0.0f)
+			if(this.getSaturationLevel() > 0.0f)
 			{
 				// Exhaust from saturation
 				this.addSaturationLevel(-1.0f);
@@ -296,6 +299,16 @@ public class ThirstCapability implements IThirstCapability
 	public int getPacketTimer()
 	{
 		return packetTimer;
+	}
+
+	@Override
+	public void deserializeNBT(HolderLookup.Provider provider, CompoundTag nbt) {
+		readNBT(nbt);
+	}
+
+	@Override
+	public @UnknownNullability CompoundTag serializeNBT(HolderLookup.Provider provider) {
+		return writeNBT();
 	}
 
 	public CompoundTag writeNBT()

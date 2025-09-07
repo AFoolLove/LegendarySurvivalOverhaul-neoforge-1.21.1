@@ -1,31 +1,38 @@
 package sfiomn.legendarysurvivaloverhaul.data.recipes;
 
 import com.google.gson.JsonObject;
-import net.minecraft.advancements.Advancement;
-import net.minecraft.advancements.CriterionTriggerInstance;
-import net.minecraft.advancements.RequirementsStrategy;
+import net.minecraft.advancements.*;
 import net.minecraft.advancements.critereon.RecipeUnlockedTrigger;
-import net.minecraft.data.recipes.FinishedRecipe;
 import net.minecraft.data.recipes.RecipeBuilder;
 import net.minecraft.data.recipes.RecipeCategory;
+import net.minecraft.data.recipes.RecipeOutput;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.AbstractCookingRecipe;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeSerializer;
-import net.minecraftforge.registries.ForgeRegistries;
+
+import net.minecraft.world.item.crafting.SingleItemRecipe;
 import org.jetbrains.annotations.NotNull;
+import sfiomn.legendarysurvivaloverhaul.common.recipe.SewingRecipe;
 import sfiomn.legendarysurvivaloverhaul.registry.RecipeRegistry;
 
 import javax.annotation.Nullable;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Objects;
 import java.util.function.Consumer;
 
-public class SewingRecipeBuilder {
+public class SewingRecipeBuilder implements RecipeBuilder {
     private final RecipeCategory category;
     private final Ingredient base;
     private final Ingredient addition;
     private final ItemStack result;
-    private final Advancement.Builder advancement = Advancement.Builder.advancement();
     private final RecipeSerializer<?> type;
+    private final Map<String, Criterion<?>> criteria = new LinkedHashMap<>();
+    @Nullable
+    private String group;
 
     public SewingRecipeBuilder(RecipeSerializer<?> type, RecipeCategory category, Ingredient base, Ingredient addition, ItemStack result) {
         this.category = category;
@@ -39,61 +46,37 @@ public class SewingRecipeBuilder {
         return new SewingRecipeBuilder(RecipeRegistry.SEWING_SERIALIZER.get(), category, base, addition, result);
     }
 
-    public SewingRecipeBuilder unlockedBy(String name, CriterionTriggerInstance advancement) {
-        this.advancement.addCriterion(name, advancement);
+    @Override
+    public @NotNull SewingRecipeBuilder unlockedBy(@NotNull String name, @NotNull Criterion<?> criterion) {
+        this.criteria.put(name, criterion);
         return this;
     }
 
-    public void save(Consumer<FinishedRecipe> consumer, String id) {
-        this.save(consumer, new ResourceLocation(id));
+    @Override
+    public @NotNull RecipeBuilder group(@Nullable String groupName) {
+        this.group = groupName;;
+        return this;
     }
 
-    public void save(Consumer<FinishedRecipe> consumer, ResourceLocation id) {
+    @Override
+    public @NotNull Item getResult() {
+        return result.getItem();
+    }
+
+    public void save(RecipeOutput recipeOutput, ResourceLocation id) {
         this.ensureValid(id);
-        this.advancement.parent(RecipeBuilder.ROOT_RECIPE_ADVANCEMENT).addCriterion("has_the_recipe", RecipeUnlockedTrigger.unlocked(id)).rewards(net.minecraft.advancements.AdvancementRewards.Builder.recipe(id)).requirements(RequirementsStrategy.OR);
-        consumer.accept(new Result(id, this.type, this.base, this.addition, this.result, this.advancement, id.withPrefix("recipes/" + category.getFolderName() + "/")));
+        Advancement.Builder advancement$builder = recipeOutput.advancement()
+                .addCriterion("has_the_recipe", RecipeUnlockedTrigger.unlocked(id))
+                .rewards(AdvancementRewards.Builder.recipe(id))
+                .requirements(AdvancementRequirements.Strategy.OR);
+        this.criteria.forEach(advancement$builder::addCriterion);
+        SewingRecipe sewingRecipe = new SewingRecipe(this.base, this.addition, this.result);
+        recipeOutput.accept(id, sewingRecipe, advancement$builder.build(id.withPrefix("recipes/" + this.category.getFolderName() + "/")));
     }
 
     private void ensureValid(ResourceLocation id) {
-        if (this.advancement.getCriteria().isEmpty()) {
+        if (this.criteria.isEmpty()) {
             throw new IllegalStateException("No way of obtaining recipe " + id);
-        }
-    }
-
-    public record Result(ResourceLocation id, RecipeSerializer<?> type, Ingredient base, Ingredient addition, ItemStack result, Advancement.Builder advancement, ResourceLocation advancementId) implements FinishedRecipe {
-
-        public void serializeRecipeData(@NotNull JsonObject json) {
-            json.add("base", this.base.toJson());
-            json.add("addition", this.addition.toJson());
-
-            ResourceLocation resultRegistryName = ForgeRegistries.ITEMS.getKey(this.result.getItem());
-            if (resultRegistryName != null) {
-                JsonObject jsonobject = new JsonObject();
-                jsonobject.addProperty("item", resultRegistryName.toString());
-                if (this.result.hasTag() && this.result.getTag() != null) {
-                    jsonobject.addProperty("type", "forge:partial_nbt");
-                    jsonobject.addProperty("nbt", this.result.getTag().toString());
-                }
-                json.add("result", jsonobject);
-            }
-        }
-
-        public @NotNull ResourceLocation getId() {
-            return this.id;
-        }
-
-        public @NotNull RecipeSerializer<?> getType() {
-            return this.type;
-        }
-
-        @Nullable
-        public JsonObject serializeAdvancement() {
-            return this.advancement.serializeToJson();
-        }
-
-        @Nullable
-        public ResourceLocation getAdvancementId() {
-            return this.advancementId;
         }
     }
 }

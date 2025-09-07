@@ -1,0 +1,14 @@
+{
+  "type": "legendarysurvivaloverhaul:purification_blasting",
+  "category": "misc",
+  "cookingtime": 80,
+  "experience": 1.0,
+  "group": "purification",
+  "ingredient": {
+    "item": "legendarysurvivaloverhaul:large_canteen"
+  },
+  "result": {
+    "count": 1,
+    "id": "legendarysurvivaloverhaul:large_canteen"
+  }
+}

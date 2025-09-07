@@ -1,6 +1,9 @@
 package sfiomn.legendarysurvivaloverhaul.util.internal;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.component.DataComponentType;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
@@ -9,9 +12,12 @@ import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.registries.ForgeRegistries;
+
+import net.neoforged.neoforge.items.ComponentItemHandler;
+import net.neoforged.neoforge.registries.DeferredRegister;
 import sfiomn.legendarysurvivaloverhaul.LegendarySurvivalOverhaul;
 import sfiomn.legendarysurvivaloverhaul.api.data.json.JsonTemperatureConsumable;
 import sfiomn.legendarysurvivaloverhaul.api.data.json.JsonTemperatureConsumableBlock;
@@ -38,20 +44,26 @@ public class TemperatureUtilInternal implements ITemperatureUtil
 {
 	public static final String COAT_TAG = "Coat";
 
-	public static final AttributeBuilder HEATING_TEMPERATURE = new AttributeBuilder(AttributeRegistry.HEATING_TEMPERATURE.get(), "attribute." + LegendarySurvivalOverhaul.MOD_ID + ".heating_temperature");
-	public static final AttributeBuilder COOLING_TEMPERATURE = new AttributeBuilder(AttributeRegistry.COOLING_TEMPERATURE.get(), "attribute." + LegendarySurvivalOverhaul.MOD_ID + ".cooling_temperature");
-	public static final AttributeBuilder HEAT_RESISTANCE = new AttributeBuilder(AttributeRegistry.HEAT_RESISTANCE.get(), "attribute." + LegendarySurvivalOverhaul.MOD_ID + ".heat_resistance");
-	public static final AttributeBuilder COLD_RESISTANCE = new AttributeBuilder(AttributeRegistry.COLD_RESISTANCE.get(), "attribute." + LegendarySurvivalOverhaul.MOD_ID + ".cold_resistance");
-	public static final AttributeBuilder THERMAL_RESISTANCE = new AttributeBuilder(AttributeRegistry.THERMAL_RESISTANCE.get(), "attribute." + LegendarySurvivalOverhaul.MOD_ID + ".thermal_resistance");
+	public static final AttributeBuilder HEATING_TEMPERATURE = new AttributeBuilder(AttributeRegistry.HEATING_TEMPERATURE, "attribute." + LegendarySurvivalOverhaul.MOD_ID + ".heating_temperature");
+	public static final AttributeBuilder COOLING_TEMPERATURE = new AttributeBuilder(AttributeRegistry.COOLING_TEMPERATURE, "attribute." + LegendarySurvivalOverhaul.MOD_ID + ".cooling_temperature");
+	public static final AttributeBuilder HEAT_RESISTANCE = new AttributeBuilder(AttributeRegistry.HEAT_RESISTANCE, "attribute." + LegendarySurvivalOverhaul.MOD_ID + ".heat_resistance");
+	public static final AttributeBuilder COLD_RESISTANCE = new AttributeBuilder(AttributeRegistry.COLD_RESISTANCE, "attribute." + LegendarySurvivalOverhaul.MOD_ID + ".cold_resistance");
+	public static final AttributeBuilder THERMAL_RESISTANCE = new AttributeBuilder(AttributeRegistry.THERMAL_RESISTANCE, "attribute." + LegendarySurvivalOverhaul.MOD_ID + ".thermal_resistance");
 
-	public static final Map<EquipmentSlot, UUID> equipmentSlotTemperatureUuid = new HashMap<>();
+	public static final Map<EquipmentSlot, ResourceLocation> equipmentSlotTemperatureUuid = new HashMap<>();
 	static {
-		equipmentSlotTemperatureUuid.put(EquipmentSlot.HEAD, UUID.fromString("06e30f27-2340-4bdb-9a91-a657f1e2880f"));
-		equipmentSlotTemperatureUuid.put(EquipmentSlot.CHEST, UUID.fromString("1e7ef99e-2fe7-4edc-95b1-27fa056eae6d"));
-		equipmentSlotTemperatureUuid.put(EquipmentSlot.LEGS, UUID.fromString("f46c0aff-7381-4f99-890e-75eb3781af21"));
-		equipmentSlotTemperatureUuid.put(EquipmentSlot.FEET, UUID.fromString("34f98220-a7d9-4cc1-8930-b3dc4115ad07"));
-		equipmentSlotTemperatureUuid.put(EquipmentSlot.MAINHAND, UUID.fromString("7b1e1c2c-746c-4631-8037-f76c82529909"));
-		equipmentSlotTemperatureUuid.put(EquipmentSlot.OFFHAND, UUID.fromString("389caa2f-2c18-49da-b521-b53cc5713e14"));
+//		equipmentSlotTemperatureUuid.put(EquipmentSlot.HEAD, UUID.fromString("06e30f27-2340-4bdb-9a91-a657f1e2880f"));
+		equipmentSlotTemperatureUuid.put(EquipmentSlot.HEAD, ResourceLocation.withDefaultNamespace(EquipmentSlot.HEAD.getName()));
+//		equipmentSlotTemperatureUuid.put(EquipmentSlot.CHEST, UUID.fromString("1e7ef99e-2fe7-4edc-95b1-27fa056eae6d"));
+		equipmentSlotTemperatureUuid.put(EquipmentSlot.CHEST, ResourceLocation.withDefaultNamespace(EquipmentSlot.CHEST.getName()));
+//		equipmentSlotTemperatureUuid.put(EquipmentSlot.LEGS, UUID.fromString("f46c0aff-7381-4f99-890e-75eb3781af21"));
+		equipmentSlotTemperatureUuid.put(EquipmentSlot.LEGS, ResourceLocation.withDefaultNamespace(EquipmentSlot.LEGS.getName()));
+//		equipmentSlotTemperatureUuid.put(EquipmentSlot.FEET, UUID.fromString("34f98220-a7d9-4cc1-8930-b3dc4115ad07"));
+		equipmentSlotTemperatureUuid.put(EquipmentSlot.FEET, ResourceLocation.withDefaultNamespace(EquipmentSlot.FEET.getName()));
+//		equipmentSlotTemperatureUuid.put(EquipmentSlot.MAINHAND, UUID.fromString("7b1e1c2c-746c-4631-8037-f76c82529909"));
+		equipmentSlotTemperatureUuid.put(EquipmentSlot.MAINHAND, ResourceLocation.withDefaultNamespace(EquipmentSlot.MAINHAND.getName()));
+//		equipmentSlotTemperatureUuid.put(EquipmentSlot.OFFHAND, UUID.fromString("389caa2f-2c18-49da-b521-b53cc5713e14"));
+		equipmentSlotTemperatureUuid.put(EquipmentSlot.OFFHAND, ResourceLocation.withDefaultNamespace(EquipmentSlot.OFFHAND.getName()));
 	}
 
 	@Override
@@ -60,25 +72,25 @@ public class TemperatureUtilInternal implements ITemperatureUtil
 		float sum = 0.0f;
 		Level world = player.getCommandSenderWorld();
 		BlockPos pos = WorldUtil.getSidedBlockPos(world, player);
-		
-		for(ModifierBase modifier : MODIFIERS_REGISTRY.get().getValues())
+
+		for(ModifierBase modifier : MODIFIERS_REGISTRY)
 		{
 			float worldInfluence = modifier.getWorldInfluence(player, world, pos);
 			float playerInfluence = modifier.getPlayerInfluence(player);
 			if (player.getMainHandItem().is(Items.DEBUG_STICK)) {
-                LegendarySurvivalOverhaul.LOGGER.info("{} : world influence={}, player influence={}", MODIFIERS_REGISTRY.get().getKey(modifier), worldInfluence, playerInfluence);
+                LegendarySurvivalOverhaul.LOGGER.info("{} : world influence={}, player influence={}", MODIFIERS_REGISTRY.getKey(modifier), worldInfluence, playerInfluence);
 			}
 
 			sum += worldInfluence + playerInfluence;
 		}
 
 		float dynamicModification = 0.0f;
-		for (DynamicModifierBase dynamicModifier : DYNAMIC_MODIFIERS_REGISTRY.get().getValues())
+		for (DynamicModifierBase dynamicModifier : DYNAMIC_MODIFIERS_REGISTRY)
 		{
 			float worldInfluence = dynamicModifier.applyDynamicWorldInfluence(player, world, pos, sum, dynamicModification);
 			float playerInfluence = dynamicModifier.applyDynamicPlayerInfluence(player, sum, dynamicModification);
 			if (player.getMainHandItem().is(Items.DEBUG_STICK)) {
-                LegendarySurvivalOverhaul.LOGGER.info("{} : dynamic world influence={}, dynamic player influence={}", DYNAMIC_MODIFIERS_REGISTRY.get().getKey(dynamicModifier), worldInfluence, playerInfluence);
+                LegendarySurvivalOverhaul.LOGGER.info("{} : dynamic world influence={}, dynamic player influence={}", DYNAMIC_MODIFIERS_REGISTRY.getKey(dynamicModifier), worldInfluence, playerInfluence);
 			}
 
 			dynamicModification += worldInfluence + playerInfluence;
@@ -92,14 +104,14 @@ public class TemperatureUtilInternal implements ITemperatureUtil
 	{
 		float sum = 0.0f;
 
-		for(ModifierBase modifier : MODIFIERS_REGISTRY.get().getValues())
+		for(ModifierBase modifier : MODIFIERS_REGISTRY)
 		{
 			// LegendarySurvivalOverhaul.LOGGER.debug("tmp influence : " + modifier.getRegistryName() + ", " + modifier.getWorldInfluence(world, pos));
 			sum += modifier.getWorldInfluence(null, world, pos);
 		}
 
 		float dynamicModification = 0.0f;
-		for (DynamicModifierBase dynamicModifier : DYNAMIC_MODIFIERS_REGISTRY.get().getValues())
+		for (DynamicModifierBase dynamicModifier : DYNAMIC_MODIFIERS_REGISTRY)
 		{
 			// LegendarySurvivalOverhaul.LOGGER.debug("tmp influence : " + dynamicModifier.getRegistryName() + ", " + dynamicModifier.applyDynamicWorldInfluence(world, pos, sum));
 			dynamicModification += dynamicModifier.applyDynamicWorldInfluence(null, world, pos, sum, dynamicModification);
@@ -157,7 +169,7 @@ public class TemperatureUtilInternal implements ITemperatureUtil
 				for (JsonTemperatureConsumable jtc : jsonConsumableTemperatures) {
 					if (jtc.getEffect() != null) {
 						player.addEffect(new MobEffectInstance(jtc.getEffect(), jtc.duration, (Math.abs(jtc.temperatureLevel) - 1), false, false, true));
-						player.removeEffect(jtc.getOppositeEffect());
+						player.removeEffect(jtc.getEffect());
 					}
 				}
 			}
@@ -167,14 +179,14 @@ public class TemperatureUtilInternal implements ITemperatureUtil
 	@Override
 	public void applyConsumableBlockTemperature(Player player, BlockState blockState) {
 		if (Config.Baked.temperatureEnabled) {
-			ResourceLocation blockRegistryName = ForgeRegistries.BLOCKS.getKey(blockState.getBlock());
+			ResourceLocation blockRegistryName = BuiltInRegistries.BLOCK.getKey(blockState.getBlock());
 			List<JsonTemperatureConsumableBlock> jsonConsumableBlockTemperatures = TemperatureDataManager.getConsumableBlock(blockRegistryName);
 
 			if (jsonConsumableBlockTemperatures != null) {
 				for (JsonTemperatureConsumableBlock jtcb : jsonConsumableBlockTemperatures) {
 					if (jtcb.getEffect() != null && jtcb.matchesState(blockState)) {
 						player.addEffect(new MobEffectInstance(jtcb.getEffect(), jtcb.duration, (Math.abs(jtcb.temperatureLevel) - 1), false, false, true));
-						player.removeEffect(jtcb.getOppositeEffect());
+						player.removeEffect(jtcb.getEffect());
 					}
 				}
 			}
@@ -182,47 +194,49 @@ public class TemperatureUtilInternal implements ITemperatureUtil
 	}
 
 	@Override
-	public void addTemperatureModifier(Player player , double temperature, UUID uuid) {
-		HEATING_TEMPERATURE.addModifier(player, uuid, Math.max(temperature, 0));
-		COOLING_TEMPERATURE.addModifier(player, uuid, Math.min(temperature, 0));
+	public void addTemperatureModifier(Player player , double temperature, ResourceLocation id) {
+		HEATING_TEMPERATURE.addModifier(player, id, Math.max(temperature, 0));
+		COOLING_TEMPERATURE.addModifier(player, id, Math.min(temperature, 0));
 	}
 
 	@Override
-	public void addHeatResistanceModifier(Player player, double resistance, UUID uuid) {
-		HEAT_RESISTANCE.addModifier(player, uuid, resistance);
+	public void addHeatResistanceModifier(Player player, double resistance, ResourceLocation id) {
+		HEAT_RESISTANCE.addModifier(player, id, resistance);
 	}
 
 	@Override
-	public void addColdResistanceModifier(Player player, double resistance, UUID uuid) {
-		COLD_RESISTANCE.addModifier(player, uuid, resistance);
+	public void addColdResistanceModifier(Player player, double resistance, ResourceLocation id) {
+		COLD_RESISTANCE.addModifier(player, id, resistance);
 	}
 
 	@Override
-	public void addThermalResistanceModifier(Player player, double resistance, UUID uuid) {
-		THERMAL_RESISTANCE.addModifier(player, uuid, resistance);
+	public void addThermalResistanceModifier(Player player, double resistance, ResourceLocation id) {
+		THERMAL_RESISTANCE.addModifier(player, id, resistance);
 	}
 
 	@Override
 	public void setArmorCoatTag(ItemStack stack, String coatId)
 	{
-		if (!stack.hasTag())
-		{
-			stack.setTag(new CompoundTag());
-		}
+		CustomData customData = stack.get(DataComponents.CUSTOM_DATA);
+        CompoundTag compound = null;
+		if (customData == null) {
+            compound = new CompoundTag();
+		} else {
+            compound = customData.copyTag();
+        }
+        compound.putString(COAT_TAG, coatId);
 
-		final CompoundTag compound = stack.getTag();
-
-		if (compound != null) {
-			compound.putString(COAT_TAG, coatId);
-		}
+        customData = CustomData.of(compound);
+        stack.set(DataComponents.CUSTOM_DATA, customData);
 	}
 
 	@Override
 	public String getArmorCoatTag(ItemStack stack)
 	{
-		if (stack.hasTag())
+        CustomData customData = stack.get(DataComponents.CUSTOM_DATA);
+		if (customData != null)
 		{
-			final CompoundTag compound = stack.getTag();
+			final CompoundTag compound = customData.copyTag();
 
 			// TODO: remove this temporary transfer to new coat tag name
 			if (compound != null && compound.contains("ArmorPadding")) {
@@ -241,9 +255,10 @@ public class TemperatureUtilInternal implements ITemperatureUtil
 	@Override
 	public void removeArmorCoatTag(ItemStack stack)
 	{
-		if(stack.hasTag())
+		CustomData customData = stack.get(DataComponents.CUSTOM_DATA);
+		if (customData != null)
 		{
-			final CompoundTag compound = stack.getTag();
+			final CompoundTag compound = customData.copyTag();
 			if (compound != null && compound.contains(COAT_TAG))
 			{
 				compound.remove(COAT_TAG);

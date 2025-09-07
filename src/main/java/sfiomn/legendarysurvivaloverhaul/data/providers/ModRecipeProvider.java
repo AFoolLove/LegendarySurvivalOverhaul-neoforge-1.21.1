@@ -1,6 +1,7 @@
 package sfiomn.legendarysurvivaloverhaul.data.providers;
 
 import com.google.gson.JsonObject;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.data.PackOutput;
 import net.minecraft.data.recipes.*;
 import net.minecraft.nbt.CompoundTag;
@@ -8,11 +9,14 @@ import net.minecraft.tags.ItemTags;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.PotionItem;
+import net.minecraft.world.item.alchemy.PotionContents;
+import net.minecraft.world.item.alchemy.Potions;
+import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.ItemLike;
-import net.minecraftforge.common.Tags;
-import net.minecraftforge.common.crafting.PartialNBTIngredient;
-import net.minecraftforge.common.crafting.conditions.IConditionBuilder;
+import net.neoforged.neoforge.common.Tags;
+import net.neoforged.neoforge.common.conditions.IConditionBuilder;
 import org.jetbrains.annotations.NotNull;
 import sfiomn.legendarysurvivaloverhaul.LegendarySurvivalOverhaul;
 import sfiomn.legendarysurvivaloverhaul.api.thirst.HydrationEnum;
@@ -20,19 +24,22 @@ import sfiomn.legendarysurvivaloverhaul.data.recipes.PurificationRecipeBuilder;
 import sfiomn.legendarysurvivaloverhaul.data.recipes.SewingRecipeBuilder;
 import sfiomn.legendarysurvivaloverhaul.registry.BlockRegistry;
 import sfiomn.legendarysurvivaloverhaul.registry.ItemRegistry;
+import sfiomn.legendarysurvivaloverhaul.registry.MobEffectRegistry;
+import sfiomn.legendarysurvivaloverhaul.util.internal.ThirstUtilInternal;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 import static sfiomn.legendarysurvivaloverhaul.util.internal.ThirstUtilInternal.HYDRATION_ENUM_TAG;
 
 public class ModRecipeProvider extends RecipeProvider implements IConditionBuilder {
 
-    public ModRecipeProvider(PackOutput generator) {
-        super(generator);
+    public ModRecipeProvider(PackOutput generator, CompletableFuture<HolderLookup.Provider> lookupProvider) {
+        super(generator, lookupProvider);
     }
 
     @Override
-    protected void buildRecipes(@NotNull Consumer<FinishedRecipe> consumer) {
+    protected void buildRecipes(@NotNull RecipeOutput consumer, @NotNull HolderLookup.Provider holderLookup) {
         ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, ItemRegistry.DESERT_HELMET.get())
                 .pattern("r#r")
                 .pattern("r r")
@@ -242,11 +249,11 @@ public class ModRecipeProvider extends RecipeProvider implements IConditionBuild
                 .pattern("#g#")
                 .pattern("#r#")
                 .pattern("i#i")
-                .define('#', Tags.Items.GLASS)
+                .define('#', Tags.Items.GLASS_BLOCKS)
                 .define('g', Items.GOLD_INGOT)
                 .define('i', Items.IRON_INGOT)
                 .define('r', Items.REDSTONE)
-                .unlockedBy("has_glass", has(Tags.Items.GLASS))
+                .unlockedBy("has_glass", has(Tags.Items.GLASS_BLOCKS))
                 .unlockedBy("has_iron", has(Items.IRON_INGOT))
                 .unlockedBy("has_redstone", has(Items.REDSTONE))
                 .unlockedBy("has_gold_ingot", has(Items.GOLD_INGOT))
@@ -272,15 +279,14 @@ public class ModRecipeProvider extends RecipeProvider implements IConditionBuild
                 .unlockedBy("has_heart_fragment", has(ItemRegistry.HEART_FRAGMENT.get()))
                 .save(consumer);
 
-        CompoundTag nbt = new CompoundTag();
-        nbt.putString("Potion",  LegendarySurvivalOverhaul.MOD_ID + ":temperature_immunity");
+        ItemStack potionItem = PotionContents.createItemStack(Items.POTION, MobEffectRegistry.TEMPERATURE_IMMUNITY_POTION);
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ItemRegistry.THERMAL_RESISTANCE_RING.get())
                 .pattern(" wh")
                 .pattern("stw")
                 .pattern("cs ")
                 .define('w', ItemRegistry.WARM_STRING.get())
                 .define('s', ItemRegistry.COLD_STRING.get())
-                .define('t', PartialNBTIngredient.of(nbt, Items.POTION))
+                .define('t', Ingredient.of(potionItem))
                 .define('h', ItemRegistry.HEAT_RESISTANCE_RING.get())
                 .define('c', ItemRegistry.COLD_RESISTANCE_RING.get())
                 .unlockedBy("has_heat_resistance_ring", has(ItemRegistry.HEAT_RESISTANCE_RING.get()))
@@ -359,7 +365,7 @@ public class ModRecipeProvider extends RecipeProvider implements IConditionBuild
                 .pattern("g  ")
                 .define('n', Items.IRON_NUGGET)
                 .define('t', ItemRegistry.TONIC.get())
-                .define('g', Tags.Items.GLASS)
+                .define('g', Tags.Items.GLASS_BLOCKS)
                 .group("healing")
                 .unlockedBy(getHasName(ItemRegistry.PLASTER.get()), has(ItemRegistry.PLASTER.get()))
                 .save(consumer);
@@ -385,31 +391,42 @@ public class ModRecipeProvider extends RecipeProvider implements IConditionBuild
                 .unlockedBy(getHasName(ItemRegistry.HEALING_HERBS.get()), has(ItemRegistry.HEALING_HERBS.get()))
                 .save(consumer);
 
-        nbt = new CompoundTag();
-        nbt.putString("Potion", "minecraft:water");
-        smelting(consumer, PartialNBTIngredient.of(nbt, Items.POTION), ItemRegistry.PURIFIED_WATER_BOTTLE.get(), 1.0f, 200, "purified_water_bottle");
-        blasting(consumer, PartialNBTIngredient.of(nbt, Items.POTION), ItemRegistry.PURIFIED_WATER_BOTTLE.get(), 1.0f, 60, "purified_water_bottle");
+        potionItem = PotionContents.createItemStack(Items.POTION, Potions.WATER);
 
-        nbt = new CompoundTag();
-        nbt.putString(HYDRATION_ENUM_TAG, HydrationEnum.NORMAL.getName());
-        purification_smelting(consumer, PartialNBTIngredient.of(nbt, ItemRegistry.CANTEEN.get()), ItemRegistry.CANTEEN.get(), 1.0f, 240, "purified_canteen");
-        purification_smelting(consumer, PartialNBTIngredient.of(nbt, ItemRegistry.LARGE_CANTEEN.get()), ItemRegistry.LARGE_CANTEEN.get(), 1.0f, 240, "purified_large_canteen");
-        purification_blasting(consumer, PartialNBTIngredient.of(nbt, ItemRegistry.CANTEEN.get()), ItemRegistry.CANTEEN.get(), 1.0f, 80, "purified_canteen");
-        purification_blasting(consumer, PartialNBTIngredient.of(nbt, ItemRegistry.LARGE_CANTEEN.get()), ItemRegistry.LARGE_CANTEEN.get(), 1.0f, 80, "purified_large_canteen");
+        smelting(consumer, Ingredient.of(potionItem), ItemRegistry.PURIFIED_WATER_BOTTLE.get(), 1.0f, 200, "purified_water_bottle");
+        blasting(consumer, Ingredient.of(potionItem), ItemRegistry.PURIFIED_WATER_BOTTLE.get(), 1.0f, 60, "purified_water_bottle");
+
+        ThirstUtilInternal thirstUtilInternal = new ThirstUtilInternal();
+
+        ItemStack itemStack = new ItemStack(ItemRegistry.CANTEEN.get());
+        thirstUtilInternal.setThirstEnumTag(itemStack, HydrationEnum.NORMAL);
+        purification_smelting(consumer, Ingredient.of(itemStack), ItemRegistry.CANTEEN.get(), 1.0f, 240, "purified_canteen");
+
+        itemStack = new ItemStack(ItemRegistry.LARGE_CANTEEN.get());
+        thirstUtilInternal.setThirstEnumTag(itemStack, HydrationEnum.NORMAL);
+        purification_smelting(consumer, Ingredient.of(itemStack), ItemRegistry.LARGE_CANTEEN.get(), 1.0f, 240, "purified_large_canteen");
+
+        itemStack = new ItemStack(ItemRegistry.CANTEEN.get());
+        thirstUtilInternal.setThirstEnumTag(itemStack, HydrationEnum.NORMAL);
+        purification_blasting(consumer, Ingredient.of(itemStack), ItemRegistry.CANTEEN.get(), 1.0f, 80, "purified_canteen");
+
+        itemStack = new ItemStack(ItemRegistry.LARGE_CANTEEN.get());
+        thirstUtilInternal.setThirstEnumTag(itemStack, HydrationEnum.NORMAL);
+        purification_blasting(consumer, Ingredient.of(itemStack), ItemRegistry.LARGE_CANTEEN.get(), 1.0f, 80, "purified_large_canteen");
 
         sewing(consumer, Ingredient.of(Items.STRING), Ingredient.of(ItemRegistry.ICE_FERN.get()), new ItemStack(ItemRegistry.COLD_STRING.get()), "cold_string");
 
         sewing(consumer, Ingredient.of(Items.STRING), Ingredient.of(ItemRegistry.SUN_FERN.get()), new ItemStack(ItemRegistry.WARM_STRING.get()), "warm_string");
     }
 
-    protected static void smelting(@NotNull Consumer<FinishedRecipe> consumer, Ingredient input, ItemLike result, float experience, int cookingTime, String recipeName) {
+    protected static void smelting(@NotNull RecipeOutput consumer, Ingredient input, ItemLike result, float experience, int cookingTime, String recipeName) {
         SimpleCookingRecipeBuilder
                 .smelting(input, RecipeCategory.MISC, result, experience, cookingTime)
                 .unlockedBy(getHasName(input.getItems()[0].getItem()), has(input.getItems()[0].getItem()))
                 .save(consumer, LegendarySurvivalOverhaul.MOD_ID + ":" + recipeName + "_from_smelting_" + getItemName(input.getItems()[0].getItem()));
     }
 
-    protected static void purification_smelting(@NotNull Consumer<FinishedRecipe> consumer, Ingredient input, ItemLike result, float experience, int cookingTime, String recipeName) {
+    protected static void purification_smelting(@NotNull RecipeOutput consumer, Ingredient input, ItemLike result, float experience, int cookingTime, String recipeName) {
         PurificationRecipeBuilder
                 .smelting(input, RecipeCategory.MISC, result, experience, cookingTime)
                 .unlockedBy(getHasName(input.getItems()[0].getItem()), has(input.getItems()[0].getItem()))
@@ -417,14 +434,14 @@ public class ModRecipeProvider extends RecipeProvider implements IConditionBuild
                 .save(consumer, LegendarySurvivalOverhaul.MOD_ID + ":" + recipeName + "_from_purification_smelting_" + getItemName(input.getItems()[0].getItem()));
     }
 
-    protected static void blasting(@NotNull Consumer<FinishedRecipe> consumer, Ingredient input, ItemLike result, float experience, int cookingTime, String recipeName) {
+    protected static void blasting(@NotNull RecipeOutput consumer, Ingredient input, ItemLike result, float experience, int cookingTime, String recipeName) {
         SimpleCookingRecipeBuilder
                 .blasting(input, RecipeCategory.MISC, result, experience, cookingTime)
                 .unlockedBy(getHasName(input.getItems()[0].getItem()), has(input.getItems()[0].getItem()))
                 .save(consumer, LegendarySurvivalOverhaul.MOD_ID + ":" + recipeName + "_from_blasting_" + getItemName(input.getItems()[0].getItem()));
     }
 
-    protected static void purification_blasting(@NotNull Consumer<FinishedRecipe> consumer, Ingredient input, ItemLike result, float experience, int cookingTime, String recipeName) {
+    protected static void purification_blasting(@NotNull RecipeOutput consumer, Ingredient input, ItemLike result, float experience, int cookingTime, String recipeName) {
         PurificationRecipeBuilder
                 .blasting(input, RecipeCategory.MISC, result, experience, cookingTime)
                 .unlockedBy(getHasName(input.getItems()[0].getItem()), has(input.getItems()[0].getItem()))
@@ -432,15 +449,15 @@ public class ModRecipeProvider extends RecipeProvider implements IConditionBuild
                 .save(consumer, LegendarySurvivalOverhaul.MOD_ID + ":" + recipeName + "_from_purification_blasting_" + getItemName(input.getItems()[0].getItem()));
     }
 
-    protected static void sewing(@NotNull Consumer<FinishedRecipe> consumer, Ingredient input, Ingredient addition, ItemStack result, String recipeName) {
+    protected static void sewing(@NotNull RecipeOutput consumer, Ingredient input, Ingredient addition, ItemStack result, String recipeName) {
         String additionName = "";
-        if (addition instanceof PartialNBTIngredient) {
-            String nbt = ((JsonObject) addition.toJson()).get("nbt").getAsString();
-            if (nbt.contains("Potion")) {
-                additionName = nbt.split("Potion:")[1].split(":")[1];
-                additionName = additionName.substring(0, additionName.length() - 2);
-            }
-        }
+//        if (addition instanceof PartialNBTIngredient) {
+//            String nbt = ((JsonObject) addition.toJson()).get("nbt").getAsString();
+//            if (nbt.contains("Potion")) {
+//                additionName = nbt.split("Potion:")[1].split(":")[1];
+//                additionName = additionName.substring(0, additionName.length() - 2);
+//            }
+//        }
         if (additionName.isEmpty()) {
             additionName = getItemName(addition.getItems()[0].getItem());
         }
@@ -452,7 +469,7 @@ public class ModRecipeProvider extends RecipeProvider implements IConditionBuild
                 .save(consumer, LegendarySurvivalOverhaul.MOD_ID + ":" + recipeName + "_from_sewing_" + getItemName(input.getItems()[0].getItem()) + "_" + additionName);
     }
 
-    protected static void juice(@NotNull Consumer<FinishedRecipe> consumer, ItemLike fruit, Item juice) {
+    protected static void juice(@NotNull RecipeOutput consumer, ItemLike fruit, Item juice) {
         ShapelessRecipeBuilder.shapeless(RecipeCategory.FOOD, juice)
                 .requires(ItemRegistry.PURIFIED_WATER_BOTTLE.get())
                 .requires(Items.SUGAR)

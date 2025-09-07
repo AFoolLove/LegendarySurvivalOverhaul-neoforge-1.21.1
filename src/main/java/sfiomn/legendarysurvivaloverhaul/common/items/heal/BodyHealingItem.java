@@ -2,6 +2,7 @@ package sfiomn.legendarysurvivaloverhaul.common.items.heal;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
@@ -17,14 +18,17 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.UseAnim;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.registries.ForgeRegistries;
+
+import org.jetbrains.annotations.NotNull;
 import sfiomn.legendarysurvivaloverhaul.api.bodydamage.BodyDamageUtil;
 import sfiomn.legendarysurvivaloverhaul.api.bodydamage.BodyPartEnum;
 import sfiomn.legendarysurvivaloverhaul.api.bodydamage.IBodyDamageCapability;
 import sfiomn.legendarysurvivaloverhaul.api.data.json.JsonHealingConsumable;
 import sfiomn.legendarysurvivaloverhaul.api.data.manager.BodyDamageDataManager;
+import sfiomn.legendarysurvivaloverhaul.client.ClientHooks;
 import sfiomn.legendarysurvivaloverhaul.config.Config;
 import sfiomn.legendarysurvivaloverhaul.registry.MobEffectRegistry;
+import sfiomn.legendarysurvivaloverhaul.registry.SoundRegistry;
 import sfiomn.legendarysurvivaloverhaul.util.CapabilityUtil;
 
 import java.util.List;
@@ -42,8 +46,7 @@ public class BodyHealingItem extends Item {
     }
 
     @Override
-    public int getUseDuration(ItemStack stack)
-    {
+    public int getUseDuration(@NotNull ItemStack stack, @NotNull LivingEntity entity) {
         return 20;
     }
 
@@ -59,7 +62,7 @@ public class BodyHealingItem extends Item {
             return InteractionResultHolder.success(stack);
         }
 
-        ResourceLocation registryName = ForgeRegistries.ITEMS.getKey(this);
+        ResourceLocation registryName = BuiltInRegistries.ITEM.getKey(this);
         JsonHealingConsumable jsonConsumableHeal = BodyDamageDataManager.getHealingItem(registryName);
 
         if(jsonConsumableHeal != null) {
@@ -87,7 +90,7 @@ public class BodyHealingItem extends Item {
         if(!(entity instanceof Player player))
             return stack;
 
-        ResourceLocation registryName = ForgeRegistries.ITEMS.getKey(this);
+        ResourceLocation registryName = BuiltInRegistries.ITEM.getKey(this);
         JsonHealingConsumable  jsonConsumableHeal = BodyDamageDataManager.getHealingItem(registryName);
 
         if (jsonConsumableHeal == null)
@@ -96,7 +99,7 @@ public class BodyHealingItem extends Item {
         if (!Config.Baked.localizedBodyDamageEnabled) {
             if (jsonConsumableHeal.recoveryEffectDuration > 0)
                 player.addEffect(new MobEffectInstance(
-                        MobEffectRegistry.RECOVERY.get(),
+                        MobEffectRegistry.RECOVERY,
                         jsonConsumableHeal.recoveryEffectDuration,
                         jsonConsumableHeal.recoveryEffectAmplifier, false, true, true));
             stack.shrink(1);

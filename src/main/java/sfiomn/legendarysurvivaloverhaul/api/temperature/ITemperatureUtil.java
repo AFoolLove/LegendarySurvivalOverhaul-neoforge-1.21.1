@@ -29,13 +29,13 @@ public interface ITemperatureUtil
 
 	void removeImmunity(Player player, TemperatureImmunityEnum immunity);
 
-	void addTemperatureModifier(Player player, double temperature, UUID uuid);
+	void addTemperatureModifier(Player player, double temperature, ResourceLocation id);
 
-	void addHeatResistanceModifier(Player player, double temperature, UUID uuid);
+	void addHeatResistanceModifier(Player player, double temperature, ResourceLocation id);
 
-	void addColdResistanceModifier(Player player, double temperature, UUID uuid);
+	void addColdResistanceModifier(Player player, double temperature, ResourceLocation id);
 
-	void addThermalResistanceModifier(Player player, double temperature, UUID uuid);
+	void addThermalResistanceModifier(Player player, double temperature, ResourceLocation id);
 
 	void setArmorCoatTag(final ItemStack stack, String temperatureType);
 

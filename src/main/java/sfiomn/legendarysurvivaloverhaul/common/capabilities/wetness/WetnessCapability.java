@@ -1,7 +1,9 @@
 package sfiomn.legendarysurvivaloverhaul.common.capabilities.wetness;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
@@ -19,10 +21,11 @@ import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.level.material.LavaFluid;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.TickEvent.Phase;
-import net.minecraftforge.fluids.ForgeFlowingFluid;
-import net.minecraftforge.registries.ForgeRegistries;
+
+import net.neoforged.neoforge.common.util.INBTSerializable;
+import net.neoforged.neoforge.event.tick.PlayerTickEvent;
+import net.neoforged.neoforge.fluids.BaseFlowingFluid;
+import org.jetbrains.annotations.UnknownNullability;
 import sfiomn.legendarysurvivaloverhaul.api.wetness.IWetnessCapability;
 import sfiomn.legendarysurvivaloverhaul.common.integration.curios.CuriosUtil;
 import sfiomn.legendarysurvivaloverhaul.common.integration.meadow.MeadowUtil;
@@ -31,7 +34,7 @@ import sfiomn.legendarysurvivaloverhaul.registry.ItemRegistry;
 import sfiomn.legendarysurvivaloverhaul.util.MathUtil;
 import sfiomn.legendarysurvivaloverhaul.util.WorldUtil;
 
-public class WetnessCapability implements IWetnessCapability
+public class WetnessCapability implements IWetnessCapability, INBTSerializable<CompoundTag>
 {
 	public static final int WETNESS_LIMIT = 400;
 	
@@ -96,7 +99,7 @@ public class WetnessCapability implements IWetnessCapability
 	 * TODO: optimization!!
 	 */
 	@Override
-	public void tickUpdate(Player player, Level level, Phase phase)
+	public void tickUpdate(Player player, Level level, PlayerTickEvent phase)
 	{
 		if (getWetnessTickTimer() == -1 || CuriosUtil.isCurioItemEquipped(player, ItemRegistry.SPONGE.get())) {
 			if (this.getWetness() > 0)
@@ -104,7 +107,7 @@ public class WetnessCapability implements IWetnessCapability
 			return;
 		}
 
-		if(phase == TickEvent.Phase.START)
+		if(phase instanceof PlayerTickEvent.Pre)
 		{
 			packetTimer++;
 			return;
@@ -121,7 +124,7 @@ public class WetnessCapability implements IWetnessCapability
 		BlockPos pos = player.blockPosition();
 
 		if (player.getVehicle() != null) {
-			ResourceLocation entityRegistryName = ForgeRegistries.ENTITY_TYPES.getKey(player.getVehicle().getType());
+			ResourceLocation entityRegistryName = BuiltInRegistries.ENTITY_TYPE.getKey(player.getVehicle().getType());
 			if (entityRegistryName != null && Config.Baked.wetnessImmunityMounts.contains(entityRegistryName.toString())) {
 				if (this.wetness > 0)
 					this.addWetness(Config.Baked.wetnessDecrease);
@@ -175,9 +178,9 @@ public class WetnessCapability implements IWetnessCapability
 			if (!fluidStateUp.isEmpty())
 				fractionalLevel += MathUtil.invLerp(1, 8, fluidStateUp.getAmount());
 
-			if (fluid instanceof ForgeFlowingFluid)
+			if (fluid instanceof BaseFlowingFluid)
 			{
-				ForgeFlowingFluid forgeFluid = (ForgeFlowingFluid) fluidState.getType();
+				BaseFlowingFluid forgeFluid = (BaseFlowingFluid) fluidState.getType();
 				
 				if (this.wetness > 0 && forgeFluid.getFluidType().isAir())				{
 					this.addWetness(Config.Baked.wetnessDecrease);
@@ -238,7 +241,17 @@ public class WetnessCapability implements IWetnessCapability
 	{
 		return this.packetTimer;
 	}
-	
+
+	@Override
+	public void deserializeNBT(HolderLookup.Provider provider, CompoundTag nbt) {
+		readNBT(nbt);
+	}
+
+	@Override
+	public @UnknownNullability CompoundTag serializeNBT(HolderLookup.Provider provider) {
+		return writeNBT();
+	}
+
 	public CompoundTag writeNBT()
 	{
 		CompoundTag compound = new CompoundTag();

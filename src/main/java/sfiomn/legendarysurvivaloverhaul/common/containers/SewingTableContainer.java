@@ -1,6 +1,7 @@
 package sfiomn.legendarysurvivaloverhaul.common.containers;
 
 import net.minecraft.advancements.Advancement;
+import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
@@ -13,7 +14,11 @@ import net.minecraft.world.inventory.ItemCombinerMenu;
 import net.minecraft.world.inventory.ItemCombinerMenuSlotDefinition;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.RecipeHolder;
+import net.minecraft.world.item.crafting.RecipeInput;
 import net.minecraft.world.level.block.state.BlockState;
+import net.neoforged.neoforge.items.wrapper.InvWrapper;
+import net.neoforged.neoforge.items.wrapper.RecipeWrapper;
 import org.jetbrains.annotations.NotNull;
 import sfiomn.legendarysurvivaloverhaul.api.temperature.TemperatureUtil;
 import sfiomn.legendarysurvivaloverhaul.common.items.CoatItem;
@@ -26,6 +31,7 @@ import javax.annotation.Nullable;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 import static sfiomn.legendarysurvivaloverhaul.common.integration.mutantmonsters.MutantMonstersUtil.isMutantMonstersArmor;
 import static sfiomn.legendarysurvivaloverhaul.data.providers.ModAdvancementProvider.SEW_A_COAT_ADVANCEMENT;
@@ -35,7 +41,7 @@ public class SewingTableContainer extends ItemCombinerMenu {
     public static final int ADDITIONAL_SLOT = 1;
     public static final int RESULT_SLOT = 2;
     @Nullable
-    private SewingRecipe selectedRecipe;
+    private RecipeHolder<SewingRecipe> selectedRecipe;
 
     //  Constructor specified in registry
     public SewingTableContainer(int windowId, Inventory playerInventory, FriendlyByteBuf data) {
@@ -61,15 +67,17 @@ public class SewingTableContainer extends ItemCombinerMenu {
         for (int i=0; i<this.inputSlots.getContainerSize(); i++) {
             simpleContainerInputSlots.addItem(this.inputSlots.getItem(i));
         }
-        List<SewingRecipe> sewingRecipes = this.player.level().getRecipeManager().getRecipesFor(SewingRecipe.Type.INSTANCE, simpleContainerInputSlots, this.player.level());
+        RecipeInput recipeInput = new RecipeWrapper(new InvWrapper(simpleContainerInputSlots));
+        Optional<RecipeHolder<SewingRecipe>> sewingRecipes = this.player.level().getRecipeManager().getRecipeFor(SewingRecipe.Type.INSTANCE, recipeInput, this.player.level());
+
         ItemStack itemStack = ItemStack.EMPTY;
 
         //  Check if we should proceed to a coat application
         if (!isItemArmor(inputSlots.getItem(INPUT_SLOT)) || !isItemCoat(inputSlots.getItem(ADDITIONAL_SLOT))) {
             //  Proceed with the found recipe
-            if (!sewingRecipes.isEmpty()) {
-                this.selectedRecipe = sewingRecipes.get(0);
-                itemStack = this.selectedRecipe.assemble(simpleContainerInputSlots, this.player.level().registryAccess());
+            if (sewingRecipes.isPresent()) {
+                this.selectedRecipe = sewingRecipes.get();
+                itemStack = this.selectedRecipe.value().assemble(recipeInput, this.player.level().registryAccess());
                 this.resultSlots.setRecipeUsed(this.selectedRecipe);
             }
         } else {
@@ -77,9 +85,9 @@ public class SewingTableContainer extends ItemCombinerMenu {
             if (!Objects.equals(TemperatureUtil.getArmorCoatTag(inputSlots.getItem(INPUT_SLOT)),
                     ((CoatItem) (inputSlots.getItem(ADDITIONAL_SLOT).getItem())).coat.id())) {
                 //  Proceed with the found recipe
-                if (!sewingRecipes.isEmpty()) {
-                    this.selectedRecipe = sewingRecipes.get(0);
-                    itemStack = this.selectedRecipe.assemble(simpleContainerInputSlots, this.player.level().registryAccess());
+                if (sewingRecipes.isPresent()) {
+                    this.selectedRecipe = sewingRecipes.get();
+                    itemStack = this.selectedRecipe.value().assemble(recipeInput, this.player.level().registryAccess());
                     this.resultSlots.setRecipeUsed(this.selectedRecipe);
                 //  Use fallback coat application
                 } else {
@@ -87,10 +95,10 @@ public class SewingTableContainer extends ItemCombinerMenu {
                     CoatItem coatItem = (CoatItem) inputSlots.getItem(ADDITIONAL_SLOT).getItem();
                     TemperatureUtil.setArmorCoatTag(itemStack, coatItem.coat.id());
                     if (player instanceof ServerPlayer serverPlayer) {
-                        Advancement sewCoatAdvancement = serverPlayer.server.getAdvancements().getAdvancement(new ResourceLocation(SEW_A_COAT_ADVANCEMENT));
-                        if (sewCoatAdvancement != null) {
-                            for (String criteria: serverPlayer.getAdvancements().getOrStartProgress(sewCoatAdvancement).getRemainingCriteria()) {
-                                serverPlayer.getAdvancements().award(sewCoatAdvancement, criteria);
+                        AdvancementHolder sewCoatAdvancementHolder = serverPlayer.server.getAdvancements().get(ResourceLocation.parse(SEW_A_COAT_ADVANCEMENT));
+                        if (sewCoatAdvancementHolder != null) {
+                            for (String criteria: serverPlayer.getAdvancements().getOrStartProgress(sewCoatAdvancementHolder).getRemainingCriteria()) {
+                                serverPlayer.getAdvancements().award(sewCoatAdvancementHolder, criteria);
                             }
                         }
                     }

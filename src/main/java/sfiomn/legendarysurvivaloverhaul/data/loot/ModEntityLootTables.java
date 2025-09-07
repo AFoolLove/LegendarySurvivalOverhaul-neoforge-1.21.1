@@ -1,38 +1,44 @@
 package sfiomn.legendarysurvivaloverhaul.data.loot;
 
+import net.minecraft.core.HolderLookup;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.data.loot.LootTableSubProvider;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.storage.loot.BuiltInLootTables;
 import net.minecraft.world.level.storage.loot.LootPool;
 import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.world.level.storage.loot.entries.EmptyLootItem;
 import net.minecraft.world.level.storage.loot.entries.LootItem;
+import org.jetbrains.annotations.NotNull;
 import sfiomn.legendarysurvivaloverhaul.LegendarySurvivalOverhaul;
 import sfiomn.legendarysurvivaloverhaul.registry.ItemRegistry;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.function.BiConsumer;
 
 public class ModEntityLootTables implements LootTableSubProvider {
+    public static final ResourceKey<LootTable> DROWNED = ResourceKey.create(Registries.LOOT_TABLE, ResourceLocation.withDefaultNamespace("entities/drowned"));;
 
-    public static List<ResourceLocation> entityInjectedLootTables = Arrays.asList(
-            new ResourceLocation("entities/drowned")
+    public static Map<ResourceKey<LootTable>, ResourceLocation> entityInjectedLootTables = Map.ofEntries(
+            Map.entry(DROWNED, ResourceLocation.withDefaultNamespace("entities/drowned"))
     );
-
-    public ModEntityLootTables() {
+    public ModEntityLootTables(HolderLookup.Provider provider) {
     }
 
     @Override
-    public void generate(BiConsumer<ResourceLocation, LootTable.Builder> biConsumer) {
+    public void generate(@NotNull BiConsumer<ResourceKey<LootTable>, LootTable.Builder> biConsumer) {
 
-        for (ResourceLocation lootTable : entityInjectedLootTables) {
-            biConsumer.accept(
-                    new ResourceLocation(LegendarySurvivalOverhaul.MOD_ID, "inject/" + lootTable.getPath()),
-                    LootTable.lootTable().withPool(
-                            LootPool.lootPool()
-                                    .add(LootItem.lootTableItem(ItemRegistry.WATER_PURIFIER.get()).setWeight(1))
-                                    .add(EmptyLootItem.emptyItem().setWeight(100))
-                    ));
+        for (Map.Entry<ResourceKey<LootTable>, ResourceLocation> entry : entityInjectedLootTables.entrySet()) {
+            biConsumer.accept(ResourceKey.create(entry.getKey().registryKey(),
+                            ResourceLocation.fromNamespaceAndPath(LegendarySurvivalOverhaul.MOD_ID, "inject/" + entry.getKey().location().getPath())
+            ), LootTable.lootTable().withPool(
+                    LootPool.lootPool()
+                            .add(LootItem.lootTableItem(ItemRegistry.WATER_PURIFIER.get()).setWeight(1))
+                            .add(EmptyLootItem.emptyItem().setWeight(100))
+            ));
         }
     }
 }

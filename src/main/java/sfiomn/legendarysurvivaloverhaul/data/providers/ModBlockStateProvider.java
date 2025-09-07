@@ -5,11 +5,11 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.DoublePlantBlock;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
-import net.minecraftforge.client.model.generators.BlockStateProvider;
-import net.minecraftforge.client.model.generators.ConfiguredModel;
-import net.minecraftforge.client.model.generators.ModelFile;
-import net.minecraftforge.client.model.generators.VariantBlockStateBuilder;
-import net.minecraftforge.common.data.ExistingFileHelper;
+import net.neoforged.neoforge.client.model.generators.BlockStateProvider;
+import net.neoforged.neoforge.client.model.generators.ConfiguredModel;
+import net.neoforged.neoforge.client.model.generators.ModelFile;
+import net.neoforged.neoforge.client.model.generators.VariantBlockStateBuilder;
+import net.neoforged.neoforge.common.data.ExistingFileHelper;
 import sfiomn.legendarysurvivaloverhaul.LegendarySurvivalOverhaul;
 import sfiomn.legendarysurvivaloverhaul.common.blocks.IceFernBlock;
 import sfiomn.legendarysurvivaloverhaul.common.blocks.SunFernBlock;
@@ -20,12 +20,12 @@ import static sfiomn.legendarysurvivaloverhaul.common.blocks.ThermalBlock.FACING
 
 public class ModBlockStateProvider extends BlockStateProvider {
 
-    public static final ResourceLocation COOLER_OFF = new ResourceLocation(LegendarySurvivalOverhaul.MOD_ID, "block/cooler_off");
-    public static final ResourceLocation COOLER_ON = new ResourceLocation(LegendarySurvivalOverhaul.MOD_ID, "block/cooler_on");
-    public static final ResourceLocation HEATER_BASE_OFF = new ResourceLocation(LegendarySurvivalOverhaul.MOD_ID, "block/heater_base_off");
-    public static final ResourceLocation HEATER_BASE_ON = new ResourceLocation(LegendarySurvivalOverhaul.MOD_ID, "block/heater_base_on");
-    public static final ResourceLocation HEATER_TOP = new ResourceLocation(LegendarySurvivalOverhaul.MOD_ID, "block/heater_top");
-    public static final ResourceLocation SEWING_TABLE = new ResourceLocation(LegendarySurvivalOverhaul.MOD_ID, "block/sewing_table");
+    public static final ResourceLocation COOLER_OFF = ResourceLocation.fromNamespaceAndPath(LegendarySurvivalOverhaul.MOD_ID, "block/cooler_off");
+    public static final ResourceLocation COOLER_ON = ResourceLocation.fromNamespaceAndPath(LegendarySurvivalOverhaul.MOD_ID, "block/cooler_on");
+    public static final ResourceLocation HEATER_BASE_OFF = ResourceLocation.fromNamespaceAndPath(LegendarySurvivalOverhaul.MOD_ID, "block/heater_base_off");
+    public static final ResourceLocation HEATER_BASE_ON = ResourceLocation.fromNamespaceAndPath(LegendarySurvivalOverhaul.MOD_ID, "block/heater_base_on");
+    public static final ResourceLocation HEATER_TOP = ResourceLocation.fromNamespaceAndPath(LegendarySurvivalOverhaul.MOD_ID, "block/heater_top");
+    public static final ResourceLocation SEWING_TABLE = ResourceLocation.fromNamespaceAndPath(LegendarySurvivalOverhaul.MOD_ID, "block/sewing_table");
 
     public ModBlockStateProvider(PackOutput output, ExistingFileHelper exFileHelper) {
         super(output, LegendarySurvivalOverhaul.MOD_ID, exFileHelper);
@@ -65,9 +65,9 @@ public class ModBlockStateProvider extends BlockStateProvider {
 
         this.getVariantBuilder(BlockRegistry.HEATER_TOP.get())
                 .forAllStates(state -> ConfiguredModel.builder()
-                                .modelFile(new ModelFile.UncheckedModelFile(HEATER_TOP))
-                                .rotationY((int) state.getValue(FACING).toYRot())
-                                .build());
+                        .modelFile(new ModelFile.UncheckedModelFile(HEATER_TOP))
+                        .rotationY((int) state.getValue(FACING).toYRot())
+                        .build());
 
         simpleBlockItem(BlockRegistry.SEWING_TABLE.get(), new ModelFile.UncheckedModelFile(SEWING_TABLE));
         this.getVariantBuilder(BlockRegistry.SEWING_TABLE.get())
@@ -116,18 +116,18 @@ public class ModBlockStateProvider extends BlockStateProvider {
 
         VariantBlockStateBuilder waterPlantBuilder = this.getVariantBuilder(BlockRegistry.WATER_PLANT_CROP.get());
         WaterPlantBlock.AGE.getPossibleValues().forEach((age) -> {
-                waterPlantBuilder.partialState()
-                        .with(DoublePlantBlock.HALF, DoubleBlockHalf.LOWER)
-                        .with(WaterPlantBlock.AGE, age)
-                        .modelForState()
-                        .modelFile(models().cross("water_plant_bottom_" + age, this.modLoc("block/water_plant_bottom_" + age)).texture("particle", this.modLoc("block/water_plant_bottom_" + age)).renderType("cutout"))
-                        .addModel();
-                waterPlantBuilder.partialState()
-                        .with(DoublePlantBlock.HALF, DoubleBlockHalf.UPPER)
-                        .with(WaterPlantBlock.AGE, age)
-                        .modelForState()
-                        .modelFile(models().cross("water_plant_top_" + age, this.modLoc("block/water_plant_top_" + age)).texture("particle", this.modLoc("block/water_plant_top_" + age)).renderType("cutout"))
-                        .addModel();
+            waterPlantBuilder.partialState()
+                    .with(DoublePlantBlock.HALF, DoubleBlockHalf.LOWER)
+                    .with(WaterPlantBlock.AGE, age)
+                    .modelForState()
+                    .modelFile(models().cross("water_plant_bottom_" + age, this.modLoc("block/water_plant_bottom_" + age)).texture("particle", this.modLoc("block/water_plant_bottom_" + age)).renderType("cutout"))
+                    .addModel();
+            waterPlantBuilder.partialState()
+                    .with(DoublePlantBlock.HALF, DoubleBlockHalf.UPPER)
+                    .with(WaterPlantBlock.AGE, age)
+                    .modelForState()
+                    .modelFile(models().cross("water_plant_top_" + age, this.modLoc("block/water_plant_top_" + age)).texture("particle", this.modLoc("block/water_plant_top_" + age)).renderType("cutout"))
+                    .addModel();
         });
     }
 }

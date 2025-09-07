@@ -2,6 +2,7 @@ package sfiomn.legendarysurvivaloverhaul.api.data.json;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -35,8 +36,8 @@ public class JsonTemperatureBlock {
         return this.properties.isEmpty();
     }
 
-    public boolean matchesBlockEntity(BlockEntity blockEntity) {
-        CompoundTag blockEntityTag = blockEntity.saveWithFullMetadata();
+    public boolean matchesBlockEntity(HolderLookup.Provider registries, BlockEntity blockEntity) {
+        CompoundTag blockEntityTag = blockEntity.saveWithFullMetadata(registries);
         for(Map.Entry<String, String> property: properties.entrySet()) {
             String name = property.getKey();
 

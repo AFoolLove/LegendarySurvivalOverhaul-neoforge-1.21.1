@@ -6,15 +6,22 @@ import mezz.jei.api.ingredients.subtypes.IIngredientSubtypeInterpreter;
 import mezz.jei.api.ingredients.subtypes.UidContext;
 import mezz.jei.api.registration.*;
 import net.minecraft.client.Minecraft;
+import net.minecraft.core.Holder;
+import net.minecraft.core.component.DataComponentType;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.item.crafting.Ingredient;
+import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.RegistryObject;
+
+import net.neoforged.neoforge.registries.DeferredHolder;
 import org.jetbrains.annotations.NotNull;
 import sfiomn.legendarysurvivaloverhaul.LegendarySurvivalOverhaul;
 import sfiomn.legendarysurvivaloverhaul.api.temperature.TemperatureUtil;
@@ -37,7 +44,7 @@ public class JeiIntegration implements IModPlugin {
 
     @Override
     public ResourceLocation getPluginUid() {
-        return new ResourceLocation(LegendarySurvivalOverhaul.MOD_ID, "jei_plugin");
+        return ResourceLocation.fromNamespaceAndPath(LegendarySurvivalOverhaul.MOD_ID, "jei_plugin");
     }
 
     @Override
@@ -64,7 +71,7 @@ public class JeiIntegration implements IModPlugin {
             if (world != null) {
                 RecipeManager rm = world.getRecipeManager();
                 registration.addRecipes(SewingRecipeCategory.SEWING_RECIPE_TYPE, rm.getAllRecipesFor(SewingRecipe.Type.INSTANCE).stream()
-                        .filter(Objects::nonNull).collect(Collectors.toList()));
+                        .filter(Objects::nonNull).map(RecipeHolder::value).collect(Collectors.toList()));
             }
 
             registration.addRecipes(SewingRecipeCategory.SEWING_RECIPE_TYPE, sewingCoatRecipes());
@@ -92,10 +99,15 @@ public class JeiIntegration implements IModPlugin {
         }
 
         public String apply(ItemStack itemStack, UidContext context) {
-            if (!itemStack.hasTag() || !Objects.requireNonNull(itemStack.getTag()).contains(HYDRATION_ENUM_TAG)) {
+            CustomData customData = itemStack.get(DataComponents.CUSTOM_DATA);
+            if (customData == null || !customData.contains(HYDRATION_ENUM_TAG)) {
                 return "";
             } else {
-                return itemStack.getTag().getString(HYDRATION_ENUM_TAG);
+                Tag tag = customData.copyTag().get(HYDRATION_ENUM_TAG);
+                if (tag != null) {
+                    return tag.getAsString();
+                }
+                return "";
             }
         }
     }
@@ -103,10 +115,10 @@ public class JeiIntegration implements IModPlugin {
     private ArrayList<SewingRecipe> sewingCoatRecipes() {
         ArrayList<SewingRecipe> sewingRecipes = new ArrayList<>();
 
-        for (Item item: ForgeRegistries.ITEMS) {
-            if (item instanceof ArmorItem && ForgeRegistries.ITEMS.getKey(item) != null) {
+        for (Item item: BuiltInRegistries.ITEM) {
+            if (item instanceof ArmorItem && BuiltInRegistries.ITEM.getKey(item) != null) {
                 addSewingRecipe(item, sewingRecipes);
-            } else if (isMutantMonstersArmor(item) && ForgeRegistries.ITEMS.getKey(item) != null) {
+            } else if (isMutantMonstersArmor(item) && BuiltInRegistries.ITEM.getKey(item) != null) {
                 addSewingRecipe(item, sewingRecipes);
             }
         }
@@ -115,8 +127,8 @@ public class JeiIntegration implements IModPlugin {
     }
 
     private void addSewingRecipe(Item itemArmor, ArrayList<SewingRecipe> sewingRecipes) {
-        ResourceLocation itemArmorRegistryName = ForgeRegistries.ITEMS.getKey(itemArmor);
-        for (RegistryObject<Item> modItem : ItemRegistry.ITEMS.getEntries()) {
+        ResourceLocation itemArmorRegistryName = BuiltInRegistries.ITEM.getKey(itemArmor);
+        for (DeferredHolder<Item, ? extends Item> modItem : ItemRegistry.ITEMS.getEntries()) {
             if (modItem.get() instanceof CoatItem itemCoat && itemArmorRegistryName != null) {
                 ItemStack result = new ItemStack(itemArmor);
                 TemperatureUtil.setArmorCoatTag(result, itemCoat.coat.id());
@@ -135,8 +147,7 @@ public class JeiIntegration implements IModPlugin {
         return new SewingRecipe(
                 Ingredient.of(base),
                 Ingredient.of(addition),
-                result,
-                new ResourceLocation(id)
+                result
         );
     }
 }

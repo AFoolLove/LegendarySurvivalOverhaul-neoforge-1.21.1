@@ -5,16 +5,17 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.PostChain;
 import net.minecraft.client.renderer.PostPass;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.fml.util.ObfuscationReflectionHelper;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.fml.util.ObfuscationReflectionHelper;
+import sfiomn.legendarysurvivaloverhaul.LegendarySurvivalOverhaul;
 
 import java.lang.reflect.Field;
 import java.util.List;
 
 public class FocusShader {
-    public static final ResourceLocation BLUR_SHADER = new ResourceLocation("shaders/post/blobs2.json");
-    private static final Field shaders = ObfuscationReflectionHelper.findField(PostChain.class, "f_110009_");
+    public static final ResourceLocation BLUR_SHADER = ResourceLocation.withDefaultNamespace("shaders/post/blur.json");
+    private static final Field shaders = ObfuscationReflectionHelper.findField(PostChain.class, "passes");
 
     public FocusShader() {}
 
@@ -22,7 +23,7 @@ public class FocusShader {
         if (intensity > 0) {
             PostChain currentEffect = Minecraft.getInstance().gameRenderer.currentEffect();
             if (currentEffect == null ||
-                    !currentEffect.getName().equals("minecraft:shaders/post/blobs2.json")) {
+                    !currentEffect.getName().equals("minecraft:shaders/post/blur.json")) {
                 try {
                     Minecraft.getInstance().gameRenderer.loadEffect(BLUR_SHADER);
                 } catch (NullPointerException e) {
@@ -36,7 +37,7 @@ public class FocusShader {
     public void stopRender() {
         PostChain currentEffect = Minecraft.getInstance().gameRenderer.currentEffect();
         if (currentEffect != null &&
-                currentEffect.getName().equals("minecraft:shaders/post/blobs2.json")) {
+                currentEffect.getName().equals("minecraft:shaders/post/blur.json")) {
             Minecraft.getInstance().gameRenderer.shutdownEffect();
         }
     }

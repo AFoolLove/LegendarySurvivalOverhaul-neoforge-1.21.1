@@ -3,11 +3,14 @@ package sfiomn.legendarysurvivaloverhaul.network.packets;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.network.NetworkEvent;
-import net.minecraftforge.network.PacketDistributor;
+import net.minecraft.server.level.ServerPlayer;
+import net.neoforged.neoforge.network.PacketDistributor;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
+import org.jetbrains.annotations.NotNull;
+import sfiomn.legendarysurvivaloverhaul.LegendarySurvivalOverhaul;
 import sfiomn.legendarysurvivaloverhaul.api.data.json.JsonTemperatureResistance;
 import sfiomn.legendarysurvivaloverhaul.common.listeners.TemperatureOriginListener;
 import sfiomn.legendarysurvivaloverhaul.network.NetworkHandler;
@@ -16,8 +19,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
 
-public class SyncTemperatureOriginsPacket
+public class SyncTemperatureOriginsPacket implements CustomPacketPayload
 {
+	public static final Type<SyncTemperatureOriginsPacket> TYPE = new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(LegendarySurvivalOverhaul.MOD_ID, "sync_temperature_origins"));
+	public static final StreamCodec<FriendlyByteBuf, SyncTemperatureOriginsPacket> STREAM_CODEC =
+			CustomPacketPayload.codec(SyncTemperatureOriginsPacket::encode, SyncTemperatureOriginsPacket::decode);
+
 	private final Map<ResourceLocation, JsonTemperatureResistance> temperatureOrigins;
 	private final int size;
 
@@ -25,6 +32,11 @@ public class SyncTemperatureOriginsPacket
 	{
 		this.temperatureOrigins = Map.copyOf(temperatureOrigins);
 		this.size = temperatureOrigins.size();
+	}
+
+	@Override
+	public @NotNull Type<? extends CustomPacketPayload> type() {
+		return TYPE;
 	}
 
 	public static void encode(SyncTemperatureOriginsPacket message, FriendlyByteBuf buffer)
@@ -53,29 +65,16 @@ public class SyncTemperatureOriginsPacket
 		return new SyncTemperatureOriginsPacket(temperatureOrigins);
 	}
 	
-	public static void handle(SyncTemperatureOriginsPacket message, Supplier<NetworkEvent.Context> supplier)
+	public static void handle(SyncTemperatureOriginsPacket message, IPayloadContext context)
 	{
-		final NetworkEvent.Context context = supplier.get();
-		context.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> syncTemperatureOrigins(message.temperatureOrigins)));
-		
-		supplier.get().setPacketHandled(true);
+		if (context.flow().isClientbound()) {
+			context.enqueueWork(() -> {
+				TemperatureOriginListener.acceptServerTemperatureOrigins(message.temperatureOrigins);
+			});
+		}
 	}
 
-	public static DistExecutor.SafeRunnable syncTemperatureOrigins(Map<ResourceLocation, JsonTemperatureResistance> temperatureOrigins)
-	{
-		return new DistExecutor.SafeRunnable()
-		{
-			private static final long serialVersionUID = 1L;
-
-			@Override
-			public void run()
-			{
-				TemperatureOriginListener.acceptServerTemperatureOrigins(temperatureOrigins);
-			}
-		};
-	}
-
-	public static void sendTo(PacketDistributor.PacketTarget packetDistributor, Map<ResourceLocation, JsonTemperatureResistance> temperatureOrigins) {
-		NetworkHandler.INSTANCE.send(packetDistributor, new SyncTemperatureOriginsPacket(temperatureOrigins));
+	public static void sendTo(ServerPlayer player, Map<ResourceLocation, JsonTemperatureResistance> temperatureOrigins) {
+		PacketDistributor.sendToPlayer(player, new SyncTemperatureOriginsPacket(temperatureOrigins));
 	}
 }

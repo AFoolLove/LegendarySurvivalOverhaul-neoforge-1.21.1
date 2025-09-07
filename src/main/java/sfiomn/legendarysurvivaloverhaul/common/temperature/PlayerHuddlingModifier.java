@@ -28,8 +28,8 @@ public class PlayerHuddlingModifier extends ModifierBase
 		BlockPos pos = player.blockPosition();
 		
 		int huddleRadius = Config.Baked.playerHuddlingRadius;
-		
-		AABB bounds = new AABB(pos.offset(-huddleRadius, -huddleRadius, -huddleRadius), pos.offset(huddleRadius, huddleRadius, huddleRadius));
+
+		AABB bounds = AABB.encapsulatingFullBlocks(pos.offset(-huddleRadius, -huddleRadius, -huddleRadius), pos.offset(huddleRadius, huddleRadius, huddleRadius));
 
 		List<? extends Player> players = world.getNearbyPlayers(TargetingConditions.DEFAULT, player, bounds);
 		

@@ -1,18 +1,27 @@
 package sfiomn.legendarysurvivaloverhaul.common.capabilities.temperature;
 
-import net.minecraft.core.Direction;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.common.capabilities.*;
-import net.minecraftforge.common.util.LazyOptional;
-import org.jetbrains.annotations.NotNull;
+import net.neoforged.neoforge.capabilities.ICapabilityProvider;
+import net.neoforged.neoforge.capabilities.ItemCapability;
+import net.neoforged.neoforge.common.util.INBTSerializable;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.UnknownNullability;
+import sfiomn.legendarysurvivaloverhaul.LegendarySurvivalOverhaul;
 import sfiomn.legendarysurvivaloverhaul.api.temperature.ITemperatureItemCapability;
 import sfiomn.legendarysurvivaloverhaul.api.temperature.TemperatureEnum;
+import sfiomn.legendarysurvivaloverhaul.common.items.ThermometerItem;
 import sfiomn.legendarysurvivaloverhaul.util.WorldUtil;
 
-public class TemperatureItemCapability implements ITemperatureItemCapability {
+import java.util.Optional;
+
+public class TemperatureItemCapability implements ITemperatureItemCapability, INBTSerializable<CompoundTag> {
+    public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(LegendarySurvivalOverhaul.MOD_ID, "temperature_item");
+
     private float temperature;
     private long updateTick;
 
@@ -46,6 +55,16 @@ public class TemperatureItemCapability implements ITemperatureItemCapability {
         this.temperature = temperature;
     }
 
+    @Override
+    public void deserializeNBT(HolderLookup.Provider provider, CompoundTag nbt) {
+        readNBT(nbt);
+    }
+
+    @Override
+    public @UnknownNullability CompoundTag serializeNBT(HolderLookup.Provider provider) {
+        return writeNBT();
+    }
+
     public CompoundTag writeNBT()
     {
         CompoundTag compound = new CompoundTag();
@@ -62,35 +81,15 @@ public class TemperatureItemCapability implements ITemperatureItemCapability {
             this.setWorldTemperatureLevel(compound.getFloat("temperature"));
     }
 
-    public static class TemperatureItemProvider implements ICapabilityProvider, ICapabilitySerializable<CompoundTag>
+    public static class TemperatureItemProvider implements ICapabilityProvider<ItemStack, Void, TemperatureItemCapability>
     {
-        public static Capability<TemperatureItemCapability> TEMPERATURE_ITEM_CAPABILITY = CapabilityManager.get(new CapabilityToken<TemperatureItemCapability>() { });
-        private final LazyOptional<TemperatureItemCapability> instance = LazyOptional.of(this::getInstance);
-        private TemperatureItemCapability temperatureItemCapability = null;
+        public static ItemCapability<TemperatureItemCapability, Void> TEMPERATURE_ITEM_CAPABILITY = ItemCapability.createVoid(TemperatureItemCapability.ID, TemperatureItemCapability.class);
 
-        private TemperatureItemCapability getInstance() {
-            if (this.temperatureItemCapability == null) {
-                this.temperatureItemCapability = new TemperatureItemCapability();
-            }
-            return this.temperatureItemCapability;
-        }
+        private final TemperatureItemCapability capability = new TemperatureItemCapability();
 
         @Override
-        public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> capability, @Nullable Direction direction)
-        {
-            if (capability == TEMPERATURE_ITEM_CAPABILITY)
-                return instance.cast();
-            return LazyOptional.empty();
-        }
-
-        @Override
-        public CompoundTag serializeNBT() {
-            return getInstance().writeNBT();
-        }
-
-        @Override
-        public void deserializeNBT(CompoundTag tag) {
-            getInstance().readNBT(tag);
+        public @Nullable TemperatureItemCapability getCapability(ItemStack object, Void context) {
+            return capability;
         }
     }
 }

@@ -1,5 +1,7 @@
 package sfiomn.legendarysurvivaloverhaul.common.containers;
 
+import net.minecraft.core.Direction;
+import net.minecraft.core.Holder;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -8,14 +10,17 @@ import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.items.IItemHandler;
-import net.minecraftforge.items.SlotItemHandler;
-import net.minecraftforge.registries.RegistryObject;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.capabilities.CapabilityHooks;
+import net.neoforged.neoforge.capabilities.CapabilityRegistry;
+import net.neoforged.neoforge.items.IItemHandler;
+import net.neoforged.neoforge.items.SlotItemHandler;
+import org.jetbrains.annotations.NotNull;
 import sfiomn.legendarysurvivaloverhaul.api.block.ThermalTypeEnum;
 import sfiomn.legendarysurvivaloverhaul.common.blockentities.AbstractThermalBlockEntity;
+import sfiomn.legendarysurvivaloverhaul.util.CapabilityUtil;
 
 public abstract class AbstractThermalContainer extends AbstractContainerMenu {
 
@@ -24,8 +29,8 @@ public abstract class AbstractThermalContainer extends AbstractContainerMenu {
     public final Level level;
     public final ContainerData dataAccess;
 
-    public AbstractThermalContainer(int windowId, Inventory playerInventory, AbstractThermalBlockEntity be, ContainerData dataAccess, RegistryObject<MenuType<AbstractThermalContainer>> registryObject, ThermalTypeEnum thermalType) {
-        super(registryObject.get(), windowId);
+    public AbstractThermalContainer(int windowId, Inventory playerInventory, AbstractThermalBlockEntity be, ContainerData dataAccess, Holder<MenuType<?>> registryObject, ThermalTypeEnum thermalType) {
+        super(registryObject.value(), windowId);
         checkContainerSize(playerInventory, 4);
         this.thermalType = thermalType;
         this.blockEntity = be;
@@ -34,13 +39,13 @@ public abstract class AbstractThermalContainer extends AbstractContainerMenu {
 
         layoutPlayerInventorySlots(playerInventory, 8, 84);
 
-        this.blockEntity.getCapability(ForgeCapabilities.ITEM_HANDLER).ifPresent(iItemHandler -> {
+        IItemHandler iItemHandler = this.level.getCapability(Capabilities.ItemHandler.BLOCK, this.blockEntity.getBlockPos(), Direction.NORTH);
+        if (iItemHandler != null) {
             addSlot(addThermalSlot(iItemHandler, 0, 14, 32));
             addSlot(addThermalSlot(iItemHandler, 1, 34, 32));
             addSlot(addThermalSlot(iItemHandler, 2, 14, 52));
             addSlot(addThermalSlot(iItemHandler, 3, 34, 52));
-        });
-
+        }
         addDataSlots(dataAccess);
     }
 

@@ -1,17 +1,20 @@
 package sfiomn.legendarysurvivaloverhaul.client.render;
 
+import sfiomn.legendarysurvivaloverhaul.util.GuiUtils;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.LayeredDraw;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.decoration.BlockAttachedEntity;
 import net.minecraft.world.entity.decoration.ItemFrame;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
-import net.minecraftforge.client.gui.overlay.ForgeGui;
-import net.minecraftforge.client.gui.overlay.IGuiOverlay;
-import net.minecraftforge.common.ForgeMod;
+
+import net.neoforged.neoforge.common.NeoForgeMod;
 import sereneseasons.api.SSItems;
 import sfiomn.legendarysurvivaloverhaul.LegendarySurvivalOverhaul;
 import sfiomn.legendarysurvivaloverhaul.common.capabilities.temperature.TemperatureItemCapability;
@@ -26,7 +29,7 @@ import static sfiomn.legendarysurvivaloverhaul.util.ItemUtil.compassLocation;
 import static sfiomn.legendarysurvivaloverhaul.util.WorldUtil.timeInGame;
 
 public class RenderTooltipFrame {
-    public static final ResourceLocation ICONS = new ResourceLocation(LegendarySurvivalOverhaul.MOD_ID, "textures/gui/overlay.png");
+    public static final ResourceLocation ICONS = ResourceLocation.fromNamespaceAndPath(LegendarySurvivalOverhaul.MOD_ID, "textures/gui/overlay.png");
 
     private static final int FRAME_HEIGHT = 20;
     private static final int FRAME_WIDTH = 122;
@@ -40,21 +43,25 @@ public class RenderTooltipFrame {
 
     private static Entity ENTITY_LOOKED_AT = null;
 
-    public static IGuiOverlay TOOLTIP_ITEM_FRAME = (forgeGui, guiGraphics, partialTicks, width, height) -> {
+    public static LayeredDraw.Layer TOOLTIP_ITEM_FRAME = (guiGraphics, deltaTracker) -> {
+
+        //  - 45.0.39 Remove Attack Range and Reach Distance and add Block Reach and Entity
         Player player = Minecraft.getInstance().player;
         if (player != null) {
             if (ENTITY_LOOKED_AT == null || player.tickCount % 4 == 0) {
-                ENTITY_LOOKED_AT = WorldUtil.getEntityLookedAt(player, player.getAttributeValue(ForgeMod.ENTITY_REACH.get()));
+                ENTITY_LOOKED_AT = WorldUtil.getEntityLookedAt(player, player.entityInteractionRange());
             }
         }
+        int width = guiGraphics.guiWidth();
+        int height = guiGraphics.guiHeight();
 
         if (ENTITY_LOOKED_AT instanceof ItemFrame && !((ItemFrame) ENTITY_LOOKED_AT).getItem().isEmpty()) {
             Item itemInFrame = ((ItemFrame) ENTITY_LOOKED_AT).getItem().getItem();
 
             if (LegendarySurvivalOverhaul.sereneSeasonsLoaded && (itemInFrame == SSItems.CALENDAR || itemInFrame == ItemRegistry.SEASONAL_CALENDAR.get())) {
-                render(forgeGui, guiGraphics, width, height, SereneSeasonsUtil.seasonTooltip(ENTITY_LOOKED_AT.blockPosition(), ENTITY_LOOKED_AT.level()));
+                render(guiGraphics, width, height, SereneSeasonsUtil.seasonTooltip(ENTITY_LOOKED_AT.blockPosition(), ENTITY_LOOKED_AT.level()));
             } else if (LegendarySurvivalOverhaul.eclipticSeasonsLoaded && itemInFrame == ItemRegistry.SEASONAL_CALENDAR.get()) {
-                render(forgeGui, guiGraphics, width, height, EclipticSeasonsUtil.seasonTooltip(ENTITY_LOOKED_AT.level()));
+                render(guiGraphics, width, height, EclipticSeasonsUtil.seasonTooltip(ENTITY_LOOKED_AT.level()));
             } else if (itemInFrame == ItemRegistry.THERMOMETER.get()) {
                 TemperatureItemCapability tempItemCap = CapabilityUtil.getTempItemCapability(((ItemFrame) ENTITY_LOOKED_AT).getItem());
                 float temperature = tempItemCap.getWorldTemperatureLevel();
@@ -64,19 +71,19 @@ public class RenderTooltipFrame {
                 } else {
                     temperatureComponent = Component.literal(temperature + "\u00B0C");
                 }
-                render(forgeGui, guiGraphics, width, height, temperatureComponent);
+                render(guiGraphics, width, height, temperatureComponent);
             } else if (itemInFrame == Items.COMPASS) {
                 String compassLocation = compassLocation(ENTITY_LOOKED_AT);
                 if (!compassLocation.isEmpty())
-                    render(forgeGui, guiGraphics, width, height, Component.literal(compassLocation));
+                    render(guiGraphics, width, height, Component.literal(compassLocation));
             } else if (itemInFrame == Items.CLOCK) {
-                render(forgeGui, guiGraphics, width, height, Component.literal(timeInGame(Minecraft.getInstance())));
+                render(guiGraphics, width, height, Component.literal(timeInGame(Minecraft.getInstance())));
             }
         }
     };
 
-    public static void render(ForgeGui forgeGui, GuiGraphics guiGraphics, int width, int height, Component text) {
-        forgeGui.setupOverlayRenderState(true, false);
+    public static void render(GuiGraphics guiGraphics, int width, int height, Component text) {
+        GuiUtils.setupOverlayRenderState(true, false);
 
         Minecraft.getInstance().getProfiler().push("tooltip_frame");
         drawTooltipInFrame(guiGraphics, width, height, text);

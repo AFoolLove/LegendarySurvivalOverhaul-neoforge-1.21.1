@@ -13,13 +13,13 @@ public class ModParticleProvider extends ParticleDescriptionProvider {
     protected void addDescriptions() {
         List<ResourceLocation> iceFernSprites = new ArrayList<>();
         for (int i=0; i<6; i++) {
-            iceFernSprites.add(new ResourceLocation(LegendarySurvivalOverhaul.MOD_ID, "ice_fern_blossom_" + i));
+            iceFernSprites.add(ResourceLocation.fromNamespaceAndPath(LegendarySurvivalOverhaul.MOD_ID, "ice_fern_blossom_" + i));
         }
         spriteSet(ParticleTypeRegistry.ICE_FERN_BLOSSOM.get(), iceFernSprites);
 
         List<ResourceLocation> sunFernSprites = new ArrayList<>();
         for (int i=0; i<6; i++) {
-            sunFernSprites.add(new ResourceLocation(LegendarySurvivalOverhaul.MOD_ID, "sun_fern_blossom_" + i));
+            sunFernSprites.add(ResourceLocation.fromNamespaceAndPath(LegendarySurvivalOverhaul.MOD_ID, "sun_fern_blossom_" + i));
         }
         spriteSet(ParticleTypeRegistry.SUN_FERN_BLOSSOM.get(), sunFernSprites);
 

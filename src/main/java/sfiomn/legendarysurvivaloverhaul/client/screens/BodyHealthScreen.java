@@ -25,7 +25,7 @@ import java.util.Iterator;
 import java.util.Map;
 
 public class BodyHealthScreen extends Screen {
-    public static final ResourceLocation BODY_HEALTH_SCREEN = new ResourceLocation(LegendarySurvivalOverhaul.MOD_ID, "textures/gui/body_health_screen.png");
+    public static final ResourceLocation BODY_HEALTH_SCREEN = ResourceLocation.fromNamespaceAndPath(LegendarySurvivalOverhaul.MOD_ID, "textures/gui/body_health_screen.png");
     public static final int HEALTH_SCREEN_WIDTH = 176;
     public static final int HEALTH_SCREEN_HEIGHT = 183;
     public static final int HEALTH_BAR_WIDTH = 30;
@@ -159,13 +159,10 @@ public class BodyHealthScreen extends Screen {
     @Override
     public void render(@NotNull GuiGraphics gui, int mouseX, int mouseY, float partialTicks) {
         checkAutoCloseWhenHealing();
-
-        this.renderBackground(gui);
+        super.render(gui, mouseX, mouseY, partialTicks);
 
         for (BodyPartEnum bodyPart: BodyPartEnum.values())
             renderBodyPartHealth(gui, bodyPart, mouseX, mouseY, partialTicks);
-
-        super.render(gui, mouseX, mouseY, partialTicks);
     }
 
     public void checkAutoCloseWhenHealing() {
@@ -176,11 +173,11 @@ public class BodyHealthScreen extends Screen {
     }
 
     @Override
-    public void renderBackground(@NotNull GuiGraphics gui) {
+    public void renderBackground(@NotNull GuiGraphics gui, int mouseX, int mouseY, float partialTick) {
         if (minecraft == null) {
             return;
         }
-        super.renderBackground(gui);
+        super.renderBackground(gui, mouseX, mouseY, partialTick);
 
         RenderSystem.setShader(GameRenderer::getPositionTexShader);
         RenderSystem.setShaderColor(1, 1, 1, 1);

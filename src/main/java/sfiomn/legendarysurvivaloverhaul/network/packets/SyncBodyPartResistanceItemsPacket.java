@@ -1,13 +1,17 @@
 package sfiomn.legendarysurvivaloverhaul.network.packets;
 
+import com.mojang.serialization.Codec;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.network.NetworkEvent;
-import net.minecraftforge.network.PacketDistributor;
+import net.minecraft.server.level.ServerPlayer;
+import net.neoforged.neoforge.network.PacketDistributor;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
+import org.jetbrains.annotations.NotNull;
+import sfiomn.legendarysurvivaloverhaul.LegendarySurvivalOverhaul;
 import sfiomn.legendarysurvivaloverhaul.api.data.json.JsonBodyPartResistance;
 import sfiomn.legendarysurvivaloverhaul.common.listeners.BodyPartResistanceItemListener;
 import sfiomn.legendarysurvivaloverhaul.network.NetworkHandler;
@@ -16,8 +20,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
 
-public class SyncBodyPartResistanceItemsPacket
+public class SyncBodyPartResistanceItemsPacket implements CustomPacketPayload
 {
+	public static final Type<SyncBodyPartResistanceItemsPacket> TYPE = new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(LegendarySurvivalOverhaul.MOD_ID, "sync_body_part_resistance_items"));
+	public static final StreamCodec<FriendlyByteBuf, SyncBodyPartResistanceItemsPacket> STREAM_CODEC =
+			CustomPacketPayload.codec(SyncBodyPartResistanceItemsPacket::encode, SyncBodyPartResistanceItemsPacket::decode);
+
 	private final Map<ResourceLocation, JsonBodyPartResistance> bodyPartResistanceItems;
 	private final int size;
 
@@ -25,6 +33,11 @@ public class SyncBodyPartResistanceItemsPacket
 	{
 		this.bodyPartResistanceItems = Map.copyOf(bodyPartResistanceItems);
 		this.size = bodyPartResistanceItems.size();
+	}
+
+	@Override
+	public @NotNull Type<? extends CustomPacketPayload> type() {
+		return TYPE;
 	}
 
 	public static void encode(SyncBodyPartResistanceItemsPacket message, FriendlyByteBuf buffer)
@@ -53,29 +66,16 @@ public class SyncBodyPartResistanceItemsPacket
 		return new SyncBodyPartResistanceItemsPacket(bodyPartResistanceItems);
 	}
 	
-	public static void handle(SyncBodyPartResistanceItemsPacket message, Supplier<NetworkEvent.Context> supplier)
+	public static void handle(SyncBodyPartResistanceItemsPacket message, IPayloadContext context)
 	{
-		final NetworkEvent.Context context = supplier.get();
-		context.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> syncBodyPartResistanceItems(message.bodyPartResistanceItems)));
-		
-		supplier.get().setPacketHandled(true);
+		if (context.flow().isClientbound()) {
+			context.enqueueWork(() -> {
+				BodyPartResistanceItemListener.acceptServerBodyPartResistanceItems(message.bodyPartResistanceItems);
+			});
+		}
 	}
 
-	public static DistExecutor.SafeRunnable syncBodyPartResistanceItems(Map<ResourceLocation, JsonBodyPartResistance> bodyPartResistanceItems)
-	{
-		return new DistExecutor.SafeRunnable()
-		{
-			private static final long serialVersionUID = 1L;
-
-			@Override
-			public void run()
-			{
-				BodyPartResistanceItemListener.acceptServerBodyPartResistanceItems(bodyPartResistanceItems);
-			}
-		};
-	}
-
-	public static void sendTo(PacketDistributor.PacketTarget packetDistributor, Map<ResourceLocation, JsonBodyPartResistance> bodyPartResistanceItems) {
-		NetworkHandler.INSTANCE.send(packetDistributor, new SyncBodyPartResistanceItemsPacket(bodyPartResistanceItems));
+	public static void sendTo(ServerPlayer player, Map<ResourceLocation, JsonBodyPartResistance> bodyPartResistanceItems) {
+		PacketDistributor.sendToPlayer(player, new SyncBodyPartResistanceItemsPacket(bodyPartResistanceItems));
 	}
 }

@@ -1,12 +1,14 @@
 package sfiomn.legendarysurvivaloverhaul.client.render;
 
+import sfiomn.legendarysurvivaloverhaul.util.GuiUtils;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.LayeredDraw;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.HumanoidArm;
+import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.player.Player;
-import net.minecraftforge.client.gui.overlay.IGuiOverlay;
 import sfiomn.legendarysurvivaloverhaul.LegendarySurvivalOverhaul;
 import sfiomn.legendarysurvivaloverhaul.api.temperature.TemperatureEnum;
 import sfiomn.legendarysurvivaloverhaul.api.temperature.TemperatureUtil;
@@ -27,7 +29,7 @@ public class RenderTemperatureGui
 	private static TemperatureCapability TEMPERATURE_CAP = null;
 	private static final Random rand = new Random();
 
-	private static final ResourceLocation ICONS = new ResourceLocation(LegendarySurvivalOverhaul.MOD_ID, "textures/gui/overlay.png");
+	private static final ResourceLocation ICONS = ResourceLocation.fromNamespaceAndPath(LegendarySurvivalOverhaul.MOD_ID, "textures/gui/overlay.png");
 
 	private static final int TEMPERATURE_TEXTURE_POS_Y = 48;
 	private static final int TEMPERATURE_TEXTURE_WIDTH = 16;
@@ -53,16 +55,18 @@ public class RenderTemperatureGui
 	private static int flashCounter = -1;
 	private static boolean shakeSide = false;
 	
-	public static IGuiOverlay TEMPERATURE_GUI = (forgeGui, guiGraphics, partialTicks, width, height) -> {
+	public static LayeredDraw.Layer TEMPERATURE_GUI = (guiGraphics, deltaTracker) -> {
 		if (Config.Baked.temperatureEnabled
-				&& !Minecraft.getInstance().options.hideGui
-				&& forgeGui.shouldDrawSurvivalElements()) {
-			Player player = forgeGui.getMinecraft().player;
+			&& !Minecraft.getInstance().options.hideGui
+			&& GuiUtils.shouldDrawSurvivalElements()) {
+			Player player = Minecraft.getInstance().player;
+			int width = guiGraphics.guiWidth();
+			int height = guiGraphics.guiHeight();
 
 			if (player != null) {
 				rand.setSeed(player.tickCount * 445L);
 
-				forgeGui.setupOverlayRenderState(true, false);
+				GuiUtils.setupOverlayRenderState(true, false);
 
                 if (Objects.requireNonNull(Config.Baked.temperatureDisplayMode) == EnumUtil.temperatureDisplayMode.SYMBOL
 						&& !CuriosUtil.isThermometerEquipped) {
@@ -80,19 +84,21 @@ public class RenderTemperatureGui
 		}
 	};
 
-	public static IGuiOverlay FOOD_BAR_COLD_EFFECT_GUI = (forgeGui, guiGraphics, partialTicks, width, height) -> {
+	public static LayeredDraw.Layer FOOD_BAR_COLD_EFFECT_GUI = (guiGraphics, deltaTracker)-> {
 		if (!Minecraft.getInstance().options.hideGui
-				&& forgeGui.shouldDrawSurvivalElements()) {
-			Player player = forgeGui.getMinecraft().player;
+				&& GuiUtils.shouldDrawSurvivalElements()) {
+			Player player = Minecraft.getInstance().player;
+			int width = guiGraphics.guiWidth();
+			int height = guiGraphics.guiHeight();
 
-			if (player != null && player.hasEffect(MobEffectRegistry.COLD_HUNGER.get())) {
-				forgeGui.setupOverlayRenderState(true, false);
+			if (player != null && player.hasEffect(MobEffectRegistry.COLD_HUNGER)) {
+				GuiUtils.setupOverlayRenderState(true, false);
 
 				Minecraft.getInstance().getProfiler().push("temperature_gui");
 				drawFoodBarColdEffect(guiGraphics, player, width, height);
 				Minecraft.getInstance().getProfiler().pop();
 
-				forgeGui.rightHeight += 10;
+				Minecraft.getInstance().gui.rightHeight += 10;
 			}
 		}
 	};

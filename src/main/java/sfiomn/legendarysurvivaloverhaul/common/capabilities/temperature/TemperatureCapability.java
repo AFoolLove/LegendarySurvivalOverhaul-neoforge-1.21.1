@@ -1,5 +1,6 @@
 package sfiomn.legendarysurvivaloverhaul.common.capabilities.temperature;
 
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.util.Mth;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -7,8 +8,9 @@ import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.TickEvent.Phase;
+import net.neoforged.neoforge.common.util.INBTSerializable;
+import net.neoforged.neoforge.event.tick.PlayerTickEvent;
+import org.jetbrains.annotations.UnknownNullability;
 import sfiomn.legendarysurvivaloverhaul.LegendarySurvivalOverhaul;
 import sfiomn.legendarysurvivaloverhaul.api.temperature.ITemperatureCapability;
 import sfiomn.legendarysurvivaloverhaul.api.temperature.TemperatureEnum;
@@ -27,7 +29,7 @@ import java.util.Set;
 // Code adapted from 
 // https://github.com/Charles445/SimpleDifficulty/blob/v0.3.4/src/main/java/com/charles445/simpledifficulty/capability/TemperatureCapability.java
 
-public class TemperatureCapability implements ITemperatureCapability
+public class TemperatureCapability implements ITemperatureCapability, INBTSerializable<CompoundTag>
 {
 	private float temperature;
 	private Set<Integer> temperatureImmunities;
@@ -134,9 +136,9 @@ public class TemperatureCapability implements ITemperatureCapability
 	}
 
 	@Override
-	public void tickUpdate(Player player, Level level, Phase phase)
+	public void tickUpdate(Player player, Level level, PlayerTickEvent phase)
 	{
-		if(phase == TickEvent.Phase.START)
+		if(phase instanceof PlayerTickEvent.Pre)
 		{
 			packetTimer++;
 			return;
@@ -171,8 +173,8 @@ public class TemperatureCapability implements ITemperatureCapability
 	}
 
 	@Override
-	public void tickClient(Player player, Phase phase) {
-		if(phase == TickEvent.Phase.START) {
+	public void tickClient(Player player, PlayerTickEvent phase) {
+		if(phase instanceof PlayerTickEvent.Pre) {
 			return;
 		}
 
@@ -184,44 +186,44 @@ public class TemperatureCapability implements ITemperatureCapability
 		if (Config.Baked.dangerousHeatTemperature && ThirstUtil.isThirstActive(player) && tempEnum == TemperatureEnum.HEAT_STROKE) {
 			if (TemperatureEnum.HEAT_STROKE.getMiddle() <= getTemperatureLevel() && !HeatStrokeEffect.playerIsImmuneToHeat(player)) {
 				// Apply hyperthermia
-				if (!player.hasEffect(MobEffectRegistry.HEAT_STROKE.get()))
-					player.addEffect(new MobEffectInstance(MobEffectRegistry.HEAT_STROKE.get(), -1, 0, false, true));
+				if (!player.hasEffect(MobEffectRegistry.HEAT_STROKE))
+					player.addEffect(new MobEffectInstance(MobEffectRegistry.HEAT_STROKE, -1, 0, false, true));
 				return;
 			}
 		} else if (Config.Baked.dangerousColdTemperature && tempEnum == TemperatureEnum.FROSTBITE) {
 			if (TemperatureEnum.FROSTBITE.getMiddle() >= getTemperatureLevel() && !FrostbiteEffect.playerIsImmuneToFrost(player)) {
 				// Apply hypothermia.json
-				if (!player.hasEffect(MobEffectRegistry.FROSTBITE.get()))
-					player.addEffect(new MobEffectInstance(MobEffectRegistry.FROSTBITE.get(), -1, 0, false, true));
+				if (!player.hasEffect(MobEffectRegistry.FROSTBITE))
+					player.addEffect(new MobEffectInstance(MobEffectRegistry.FROSTBITE, -1, 0, false, true));
 				return;
 			}
 		}
-		if (player.hasEffect(MobEffectRegistry.HEAT_STROKE.get()))
-			player.removeEffect(MobEffectRegistry.HEAT_STROKE.get());
-		if (player.hasEffect(MobEffectRegistry.FROSTBITE.get()))
-			player.removeEffect(MobEffectRegistry.FROSTBITE.get());
+		if (player.hasEffect(MobEffectRegistry.HEAT_STROKE))
+			player.removeEffect(MobEffectRegistry.HEAT_STROKE);
+		if (player.hasEffect(MobEffectRegistry.FROSTBITE))
+			player.removeEffect(MobEffectRegistry.FROSTBITE);
 	}
 
 	private void applySecondaryEffects(Player player, TemperatureEnum tempEnum) {
 		if (Config.Baked.heatTemperatureSecondaryEffects && tempEnum == TemperatureEnum.HEAT_STROKE) {
 			if (!HeatStrokeEffect.playerIsImmuneToHeat(player)) {
 				// Apply secondary effect hyperthermia
-				if (!player.hasEffect(MobEffectRegistry.HEAT_THIRST.get()))
-					player.addEffect(new MobEffectInstance(MobEffectRegistry.HEAT_THIRST.get(), -1, 0, false, false));
+				if (!player.hasEffect(MobEffectRegistry.HEAT_THIRST))
+					player.addEffect(new MobEffectInstance(MobEffectRegistry.HEAT_THIRST, -1, 0, false, false));
 				return;
 			}
 		} else if (Config.Baked.coldTemperatureSecondaryEffects && tempEnum == TemperatureEnum.FROSTBITE) {
 			if (!FrostbiteEffect.playerIsImmuneToFrost(player)) {
 				// Apply secondary effect hypothermia
-				if (!player.hasEffect(MobEffectRegistry.COLD_HUNGER.get()))
-					player.addEffect(new MobEffectInstance(MobEffectRegistry.COLD_HUNGER.get(), -1, 0, false, false));
+				if (!player.hasEffect(MobEffectRegistry.COLD_HUNGER))
+					player.addEffect(new MobEffectInstance(MobEffectRegistry.COLD_HUNGER, -1, 0, false, false));
 				return;
 			}
 		}
-		if (player.hasEffect(MobEffectRegistry.HEAT_THIRST.get()))
-			player.removeEffect(MobEffectRegistry.HEAT_THIRST.get());
-		if (player.hasEffect(MobEffectRegistry.COLD_HUNGER.get()))
-			player.removeEffect(MobEffectRegistry.COLD_HUNGER.get());
+		if (player.hasEffect(MobEffectRegistry.HEAT_THIRST))
+			player.removeEffect(MobEffectRegistry.HEAT_THIRST);
+		if (player.hasEffect(MobEffectRegistry.COLD_HUNGER))
+			player.removeEffect(MobEffectRegistry.COLD_HUNGER);
 	}
 
 	private void shakePlayer(Player player) {
@@ -275,6 +277,16 @@ public class TemperatureCapability implements ITemperatureCapability
 	@Override
 	public List<Integer> getTemperatureImmunities() {
 		return new ArrayList<>(this.temperatureImmunities);
+	}
+
+	@Override
+	public void deserializeNBT(HolderLookup.Provider provider, CompoundTag nbt) {
+		readNBT(nbt);
+	}
+
+	@Override
+	public @UnknownNullability CompoundTag serializeNBT(HolderLookup.Provider provider) {
+		return writeNBT();
 	}
 
 	public CompoundTag writeNBT() 

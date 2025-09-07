@@ -6,11 +6,11 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonParseException;
 import com.mojang.serialization.JsonOps;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.SimpleJsonResourceReloadListener;
 import net.minecraft.util.profiling.ProfilerFiller;
-import net.minecraftforge.fml.ModList;
-import net.minecraftforge.network.PacketDistributor;
+import net.neoforged.fml.ModList;
 import org.jetbrains.annotations.NotNull;
 import sfiomn.legendarysurvivaloverhaul.LegendarySurvivalOverhaul;
 import sfiomn.legendarysurvivaloverhaul.api.data.json.JsonBodyPartsDamageSource;
@@ -36,7 +36,10 @@ public class BodyPartsDamageSourceListener extends SimpleJsonResourceReloadListe
         resourceLocationJsonElementMap.forEach((key, json) -> {
             try {
                 var parsedJson = JsonBodyPartsDamageSource.CODEC.parse(JsonOps.INSTANCE, json);
-                JsonBodyPartsDamageSource temperatures = parsedJson.getOrThrow(false, error -> LegendarySurvivalOverhaul.LOGGER.error("Failed parsing body parts damage source : {}", error));
+                JsonBodyPartsDamageSource temperatures = parsedJson.getOrThrow(error -> {
+                    LegendarySurvivalOverhaul.LOGGER.error("Failed parsing body parts damage source : {}", error);
+                    return new RuntimeException(error);
+                });
                 if (ModList.get().isLoaded(key.getNamespace()))
                     DAMAGE_SOURCES.put(key, temperatures);
             } catch (JsonParseException error) {
@@ -47,7 +50,7 @@ public class BodyPartsDamageSourceListener extends SimpleJsonResourceReloadListe
         LegendarySurvivalOverhaul.LOGGER.info("Loaded {} body parts damage sources", DAMAGE_SOURCES.size());
     }
 
-    public static void sendDataToClient(PacketDistributor.PacketTarget packetTarget) {
+    public static void sendDataToClient(ServerPlayer packetTarget) {
         SyncBodyPartsDamageSourcesPacket.sendTo(packetTarget, DAMAGE_SOURCES);
     }
 

@@ -1,5 +1,7 @@
 package sfiomn.legendarysurvivaloverhaul.common.capabilities.bodydamage;
 
+import net.minecraft.core.Holder;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffect;
@@ -7,9 +9,11 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.event.TickEvent;
+import net.neoforged.neoforge.common.util.INBTSerializable;
+import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
+import org.jetbrains.annotations.UnknownNullability;
 import sfiomn.legendarysurvivaloverhaul.api.bodydamage.BodyDamageUtil;
 import sfiomn.legendarysurvivaloverhaul.api.bodydamage.BodyPartEnum;
 import sfiomn.legendarysurvivaloverhaul.api.bodydamage.IBodyDamageCapability;
@@ -27,7 +31,7 @@ import java.util.*;
 import java.util.function.BiConsumer;
 
 
-public class BodyDamageCapability implements IBodyDamageCapability
+public class BodyDamageCapability implements IBodyDamageCapability, INBTSerializable<CompoundTag>
 {
 	// Saved data
 	private Map<BodyPartEnum, BodyPart> bodyParts;
@@ -46,7 +50,7 @@ public class BodyDamageCapability implements IBodyDamageCapability
 	private float playerMaxHealth;
 	private boolean manualDirty;
 	private int packetTimer;
-	private List<Triple<MalusBodyPartEnum, MobEffect, Integer>> malus;
+	private List<Triple<MalusBodyPartEnum, Holder<MobEffect>, Integer>> malus;
 
 	public BodyDamageCapability()
 	{
@@ -114,9 +118,9 @@ public class BodyDamageCapability implements IBodyDamageCapability
 	}
 
 	@Override
-	public void tickUpdate(Player player, Level level, TickEvent.Phase phase)
+	public void tickUpdate(Player player, Level level, PlayerTickEvent phase)
 	{
-		if(phase == TickEvent.Phase.START) {
+		if(phase instanceof PlayerTickEvent.Pre) {
 			this.packetTimer++;
 			return;
 		};
@@ -131,14 +135,14 @@ public class BodyDamageCapability implements IBodyDamageCapability
 			}
 
 			// Refresh all the malus a player should have
-			List<Triple<MalusBodyPartEnum, MobEffect, Integer>> newMalus = new ArrayList<>();
+			List<Triple<MalusBodyPartEnum, Holder<MobEffect>, Integer>> newMalus = new ArrayList<>();
 			for (MalusBodyPartEnum malusBodyPart: MalusBodyPartEnum.values()) {
-				List<Pair<MobEffect, Integer>> malusEffects = new ArrayList<>();
-				if (!player.hasEffect(MobEffectRegistry.PAINKILLER.get()))
+				List<Pair<Holder<MobEffect>, Integer>> malusEffects = new ArrayList<>();
+				if (!player.hasEffect(MobEffectRegistry.PAINKILLER))
 					malusEffects = BodyDamageUtil.getEffects(malusBodyPart, getHealthRatioForMalusBodyPart(malusBodyPart));
-				for (Triple<MalusBodyPartEnum, MobEffect, Integer> bodyPartMalusEffect: this.malus) {
+				for (Triple<MalusBodyPartEnum, Holder<MobEffect>, Integer> bodyPartMalusEffect: this.malus) {
 					if (bodyPartMalusEffect.getLeft() == malusBodyPart) {
-						Pair<MobEffect, Integer> oldEffect = Pair.of(bodyPartMalusEffect.getMiddle(), bodyPartMalusEffect.getRight());
+						Pair<Holder<MobEffect>, Integer> oldEffect = Pair.of(bodyPartMalusEffect.getMiddle(), bodyPartMalusEffect.getRight());
 						if (!malusEffects.contains(oldEffect)) {
 							player.removeEffect(oldEffect.getLeft());
 							if (oldEffect.getLeft() == MobEffectRegistry.HEADACHE.get())
@@ -146,7 +150,7 @@ public class BodyDamageCapability implements IBodyDamageCapability
 						}
 					}
 				}
-				for (Pair<MobEffect, Integer> malusEffect: malusEffects) {
+				for (Pair<Holder<MobEffect>, Integer> malusEffect: malusEffects) {
 					newMalus.add(Triple.of(malusBodyPart, malusEffect.getLeft(), malusEffect.getRight()));
 				}
 			}
@@ -154,7 +158,7 @@ public class BodyDamageCapability implements IBodyDamageCapability
 			this.malus = newMalus;
 
 			// Assign all malus effect to the player
-			for (Triple<MalusBodyPartEnum, MobEffect, Integer> malusEffect: this.malus) {
+			for (Triple<MalusBodyPartEnum, Holder<MobEffect>, Integer> malusEffect: this.malus) {
 				if (!player.hasEffect(malusEffect.getMiddle()))
 					player.addEffect(new MobEffectInstance(malusEffect.getMiddle(), -1, malusEffect.getRight(), false, false, true));
 			}
@@ -175,21 +179,9 @@ public class BodyDamageCapability implements IBodyDamageCapability
 			updateBrokenHearts(player);
 		}
 
-		if (updateTickTimer % 10 == 0) {
-			this.hasHeadache = player.hasEffect(MobEffectRegistry.HEADACHE.get());
-			this.hasFirstAidSupplies = CuriosUtil.isCurioItemEquipped(player, ItemRegistry.FIRST_AID_SUPPLIES.get());
-			if (hasFirstAidSupplies) {
-				this.hasFirstAidSuppliesBoosted = BodyDamageUtil.hasPlayerFirstAidSuppliesBoostingEffect(player);
-			} else {
-				this.passiveLimbRegenerationEffects = BodyDamageUtil.getPlayerPassiveLimbRegenerationEffect(player);
-				this.passiveLimbRegenerationEnabled = this.passiveLimbRegenerationEffects != null ||
-						(Config.Baked.passiveLimbRegenerationOnFullHealth && HealthUtil.getPlayerStableMaxHealth(player) == player.getHealth());
-			}
-		}
-
-		if (this.hasHeadache) {
+		if (player.hasEffect(MobEffectRegistry.HEADACHE)) {
 			if (this.headacheTimer-- < 0) {
-				applyHeadache(player, Objects.requireNonNull(player.getEffect(MobEffectRegistry.HEADACHE.get())).getAmplifier());
+				applyHeadache(player, Objects.requireNonNull(player.getEffect(MobEffectRegistry.HEADACHE)).getAmplifier());
 			}
 		} else {
 			this.headacheTimer = 0;
@@ -401,6 +393,16 @@ public class BodyDamageCapability implements IBodyDamageCapability
 			if (oldMaxHealth != 0)
 				bodyPart.setDamage(bodyPart.getDamage() + Math.max(newMaxHealth - oldMaxHealth, 0));
 		}
+	}
+
+	@Override
+	public void deserializeNBT(HolderLookup.Provider provider, CompoundTag nbt) {
+		readNBT(nbt);
+	}
+
+	@Override
+	public @UnknownNullability CompoundTag serializeNBT(HolderLookup.Provider provider) {
+		return writeNBT();
 	}
 
 	public CompoundTag writeNBT()

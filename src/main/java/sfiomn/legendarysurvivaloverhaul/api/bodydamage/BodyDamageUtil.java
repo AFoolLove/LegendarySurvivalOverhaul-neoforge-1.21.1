@@ -1,5 +1,7 @@
 package sfiomn.legendarysurvivaloverhaul.api.bodydamage;
 
+import net.minecraft.core.Holder;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.player.Player;
@@ -29,7 +31,7 @@ public class BodyDamageUtil
 	 * @param headHealthRatio headHealthRatio
 	 * @return List of effects and associated amplifier
 	 */
-	public static List<Pair<MobEffect, Integer>> getEffects(MalusBodyPartEnum bodyPart, float headHealthRatio)
+	public static List<Pair<Holder<MobEffect>, Integer>> getEffects(MalusBodyPartEnum bodyPart, float headHealthRatio)
 	{
 		return internal.getEffects(bodyPart, headHealthRatio);
 	}

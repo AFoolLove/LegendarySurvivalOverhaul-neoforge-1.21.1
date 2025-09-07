@@ -3,11 +3,16 @@ package sfiomn.legendarysurvivaloverhaul.network.packets;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.network.NetworkEvent;
-import net.minecraftforge.network.PacketDistributor;
+import net.minecraft.server.level.ServerPlayer;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.neoforge.network.PacketDistributor;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
+import org.jetbrains.annotations.NotNull;
+import sfiomn.legendarysurvivaloverhaul.LegendarySurvivalOverhaul;
+import sfiomn.legendarysurvivaloverhaul.api.data.json.JsonTemperature;
 import sfiomn.legendarysurvivaloverhaul.api.data.json.JsonTemperatureResistance;
 import sfiomn.legendarysurvivaloverhaul.common.listeners.TemperatureMountListener;
 import sfiomn.legendarysurvivaloverhaul.network.NetworkHandler;
@@ -16,8 +21,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
 
-public class SyncTemperatureMountsPacket
+public class SyncTemperatureMountsPacket implements CustomPacketPayload
 {
+	public static final Type<SyncTemperatureMountsPacket> TYPE = new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(LegendarySurvivalOverhaul.MOD_ID, "sync_temperature_mounts"));
+	public static final StreamCodec<FriendlyByteBuf, SyncTemperatureMountsPacket> STREAM_CODEC =
+			CustomPacketPayload.codec(SyncTemperatureMountsPacket::encode, SyncTemperatureMountsPacket::decode);
+
 	private final Map<ResourceLocation, JsonTemperatureResistance> temperatureMounts;
 	private final int size;
 
@@ -25,6 +34,11 @@ public class SyncTemperatureMountsPacket
 	{
 		this.temperatureMounts = Map.copyOf(temperatureMounts);
 		this.size = temperatureMounts.size();
+	}
+
+	@Override
+	public @NotNull Type<? extends CustomPacketPayload> type() {
+		return TYPE;
 	}
 
 	public static void encode(SyncTemperatureMountsPacket message, FriendlyByteBuf buffer)
@@ -52,30 +66,17 @@ public class SyncTemperatureMountsPacket
 
 		return new SyncTemperatureMountsPacket(temperatureMounts);
 	}
-	
-	public static void handle(SyncTemperatureMountsPacket message, Supplier<NetworkEvent.Context> supplier)
+
+	public static void handle(SyncTemperatureMountsPacket message, IPayloadContext context)
 	{
-		final NetworkEvent.Context context = supplier.get();
-		context.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> syncTemperatureMounts(message.temperatureMounts)));
-		
-		supplier.get().setPacketHandled(true);
+		if (context.flow().isClientbound()) {
+			context.enqueueWork(() -> {
+				TemperatureMountListener.acceptServerTemperatureMounts(message.temperatureMounts);
+			});
+		}
 	}
 
-	public static DistExecutor.SafeRunnable syncTemperatureMounts(Map<ResourceLocation, JsonTemperatureResistance> temperatureMounts)
-	{
-		return new DistExecutor.SafeRunnable()
-		{
-			private static final long serialVersionUID = 1L;
-
-			@Override
-			public void run()
-			{
-				TemperatureMountListener.acceptServerTemperatureMounts(temperatureMounts);
-			}
-		};
-	}
-
-	public static void sendTo(PacketDistributor.PacketTarget packetDistributor, Map<ResourceLocation, JsonTemperatureResistance> temperatureMounts) {
-		NetworkHandler.INSTANCE.send(packetDistributor, new SyncTemperatureMountsPacket(temperatureMounts));
+	public static void sendTo(ServerPlayer player, Map<ResourceLocation, JsonTemperatureResistance> temperatureMounts) {
+		PacketDistributor.sendToPlayer(player, new SyncTemperatureMountsPacket(temperatureMounts));
 	}
 }

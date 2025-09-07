@@ -3,11 +3,14 @@ package sfiomn.legendarysurvivaloverhaul.network.packets;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.network.NetworkEvent;
-import net.minecraftforge.network.PacketDistributor;
+import net.minecraft.server.level.ServerPlayer;
+import net.neoforged.neoforge.network.PacketDistributor;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
+import org.jetbrains.annotations.NotNull;
+import sfiomn.legendarysurvivaloverhaul.LegendarySurvivalOverhaul;
 import sfiomn.legendarysurvivaloverhaul.api.data.json.JsonBodyPartsDamageSource;
 import sfiomn.legendarysurvivaloverhaul.common.listeners.BodyPartsDamageSourceListener;
 import sfiomn.legendarysurvivaloverhaul.network.NetworkHandler;
@@ -16,8 +19,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
 
-public class SyncBodyPartsDamageSourcesPacket
+public class SyncBodyPartsDamageSourcesPacket implements CustomPacketPayload
 {
+	public static final Type<SyncBodyPartsDamageSourcesPacket> TYPE = new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(LegendarySurvivalOverhaul.MOD_ID, "sync_body_parts_damage_sources"));
+	public static final StreamCodec<FriendlyByteBuf, SyncBodyPartsDamageSourcesPacket> STREAM_CODEC =
+			CustomPacketPayload.codec(SyncBodyPartsDamageSourcesPacket::encode, SyncBodyPartsDamageSourcesPacket::decode);
+
 	private final Map<ResourceLocation, JsonBodyPartsDamageSource> damageSources;
 	private final int size;
 
@@ -25,6 +32,11 @@ public class SyncBodyPartsDamageSourcesPacket
 	{
 		this.damageSources = Map.copyOf(damageSources);
 		this.size = damageSources.size();
+	}
+
+	@Override
+	public @NotNull Type<? extends CustomPacketPayload> type() {
+		return TYPE;
 	}
 
 	public static void encode(SyncBodyPartsDamageSourcesPacket message, FriendlyByteBuf buffer)
@@ -53,29 +65,16 @@ public class SyncBodyPartsDamageSourcesPacket
 		return new SyncBodyPartsDamageSourcesPacket(damageSources);
 	}
 	
-	public static void handle(SyncBodyPartsDamageSourcesPacket message, Supplier<NetworkEvent.Context> supplier)
+	public static void handle(SyncBodyPartsDamageSourcesPacket message, IPayloadContext context)
 	{
-		final NetworkEvent.Context context = supplier.get();
-		context.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> syncTemperatureItems(message.damageSources)));
-		
-		supplier.get().setPacketHandled(true);
+		if (context.flow().isClientbound()) {
+			context.enqueueWork(() -> {
+				BodyPartsDamageSourceListener.acceptServerDamageSources(message.damageSources);
+			});
+		}
 	}
 
-	public static DistExecutor.SafeRunnable syncTemperatureItems(Map<ResourceLocation, JsonBodyPartsDamageSource> damageSources)
-	{
-		return new DistExecutor.SafeRunnable()
-		{
-			private static final long serialVersionUID = 1L;
-
-			@Override
-			public void run()
-			{
-				BodyPartsDamageSourceListener.acceptServerDamageSources(damageSources);
-			}
-		};
-	}
-
-	public static void sendTo(PacketDistributor.PacketTarget packetDistributor, Map<ResourceLocation, JsonBodyPartsDamageSource> damageSources) {
-		NetworkHandler.INSTANCE.send(packetDistributor, new SyncBodyPartsDamageSourcesPacket(damageSources));
+	public static void sendTo(ServerPlayer player, Map<ResourceLocation, JsonBodyPartsDamageSource> damageSources) {
+		PacketDistributor.sendToPlayer(player, new SyncBodyPartsDamageSourcesPacket(damageSources));
 	}
 }

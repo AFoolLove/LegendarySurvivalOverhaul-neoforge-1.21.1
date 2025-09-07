@@ -4,11 +4,14 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.network.NetworkEvent;
-import net.minecraftforge.network.PacketDistributor;
+import net.minecraft.server.level.ServerPlayer;
+import net.neoforged.neoforge.network.PacketDistributor;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
+import org.jetbrains.annotations.NotNull;
+import sfiomn.legendarysurvivaloverhaul.LegendarySurvivalOverhaul;
 import sfiomn.legendarysurvivaloverhaul.api.data.json.JsonThirstBlock;
 import sfiomn.legendarysurvivaloverhaul.common.listeners.ThirstBlockListener;
 import sfiomn.legendarysurvivaloverhaul.network.NetworkHandler;
@@ -19,8 +22,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
-public class SyncThirstBlocksPacket
+public class SyncThirstBlocksPacket implements CustomPacketPayload
 {
+	public static final Type<SyncThirstBlocksPacket> TYPE = new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(LegendarySurvivalOverhaul.MOD_ID, "sync_thirst_blocks"));
+	public static final StreamCodec<FriendlyByteBuf, SyncThirstBlocksPacket> STREAM_CODEC =
+			CustomPacketPayload.codec(SyncThirstBlocksPacket::encode, SyncThirstBlocksPacket::decode);
+
 	private final Map<ResourceLocation, List<JsonThirstBlock>> thirstBlocks;
 	private final int size;
 
@@ -28,6 +35,11 @@ public class SyncThirstBlocksPacket
 	{
 		this.thirstBlocks = Map.copyOf(thirstBlocks);
 		this.size = thirstBlocks.size();
+	}
+
+	@Override
+	public @NotNull Type<? extends CustomPacketPayload> type() {
+		return TYPE;
 	}
 
 	public static void encode(SyncThirstBlocksPacket message, FriendlyByteBuf buffer)
@@ -62,29 +74,16 @@ public class SyncThirstBlocksPacket
 		return new SyncThirstBlocksPacket(thirstBlocks);
 	}
 	
-	public static void handle(SyncThirstBlocksPacket message, Supplier<NetworkEvent.Context> supplier)
+	public static void handle(SyncThirstBlocksPacket message, IPayloadContext context)
 	{
-		final NetworkEvent.Context context = supplier.get();
-		context.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> syncThirstBlocks(message.thirstBlocks)));
-		
-		supplier.get().setPacketHandled(true);
-	}
-	
-	public static DistExecutor.SafeRunnable syncThirstBlocks(Map<ResourceLocation, List<JsonThirstBlock>> thirstBlocks)
-	{
-		return new DistExecutor.SafeRunnable()
-		{
-			private static final long serialVersionUID = 1L;
-			
-			@Override
-			public void run()
-			{
-				ThirstBlockListener.acceptServerThirstBlocks(thirstBlocks);
-			}
-		};
+		if (context.flow().isClientbound()) {
+			context.enqueueWork(() -> {
+				ThirstBlockListener.acceptServerThirstBlocks(message.thirstBlocks);
+			});
+		}
 	}
 
-	public static void sendTo(PacketDistributor.PacketTarget packetDistributor, Map<ResourceLocation, List<JsonThirstBlock>> thirstBlocks) {
-		NetworkHandler.INSTANCE.send(packetDistributor, new SyncThirstBlocksPacket(thirstBlocks));
+	public static void sendTo(ServerPlayer player, Map<ResourceLocation, List<JsonThirstBlock>> thirstBlocks) {
+		PacketDistributor.sendToPlayer(player, new SyncThirstBlocksPacket(thirstBlocks));
 	}
 }

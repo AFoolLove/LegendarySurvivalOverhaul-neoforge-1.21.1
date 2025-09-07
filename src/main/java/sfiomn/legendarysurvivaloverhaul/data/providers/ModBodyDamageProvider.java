@@ -2,12 +2,14 @@ package sfiomn.legendarysurvivaloverhaul.data.providers;
 
 import net.minecraft.core.HolderLookup;
 import net.minecraft.data.PackOutput;
-import net.minecraftforge.common.data.ExistingFileHelper;
+import net.neoforged.neoforge.common.data.ExistingFileHelper;
 import sfiomn.legendarysurvivaloverhaul.LegendarySurvivalOverhaul;
+import sfiomn.legendarysurvivaloverhaul.api.bodydamage.BodyPartEnum;
 import sfiomn.legendarysurvivaloverhaul.api.bodydamage.DamageDistributionEnum;
 import sfiomn.legendarysurvivaloverhaul.api.data.providers.BodyDamageDataProvider;
 import sfiomn.legendarysurvivaloverhaul.registry.ItemRegistry;
 
+import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
 
 public class ModBodyDamageProvider extends BodyDamageDataProvider {

@@ -2,7 +2,7 @@ package sfiomn.legendarysurvivaloverhaul.api.thirst;
 
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.event.TickEvent;
+import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 
 public interface IThirstCapability
 {
@@ -60,7 +60,7 @@ public interface IThirstCapability
 	 * @param world
 	 * @param phase
 	 */
-	public void tickUpdate(Player player, Level world, TickEvent.Phase phase);
+	public void tickUpdate(Player player, Level world, PlayerTickEvent phase);
 
 
 	/**

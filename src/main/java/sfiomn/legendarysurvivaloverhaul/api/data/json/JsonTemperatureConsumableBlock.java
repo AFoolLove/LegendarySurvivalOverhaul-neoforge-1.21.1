@@ -2,10 +2,11 @@ package sfiomn.legendarysurvivaloverhaul.api.data.json;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import net.minecraft.core.Holder;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.Property;
-import net.minecraftforge.registries.RegistryObject;
+import net.neoforged.neoforge.registries.DeferredHolder;
 import sfiomn.legendarysurvivaloverhaul.api.temperature.TemporaryModifierGroupEnum;
 
 import java.util.HashMap;
@@ -26,8 +27,8 @@ public class JsonTemperatureConsumableBlock {
     public int temperatureLevel;
     public int duration;
     public Map<String,String> properties;
-    private RegistryObject<MobEffect> effect;
-    private RegistryObject<MobEffect> oppositeEffect;
+    private DeferredHolder<MobEffect, MobEffect> effect;
+    private DeferredHolder<MobEffect, MobEffect> oppositeEffect;
 
     public JsonTemperatureConsumableBlock(String group, int temperatureLevel, int duration, Map<String, String> properties) {
 
@@ -49,8 +50,8 @@ public class JsonTemperatureConsumableBlock {
         }
     }
 
-    public MobEffect getEffect() {
-        return this.effect.get();
+    public Holder<MobEffect> getEffect() {
+        return this.effect;
     }
 
     public MobEffect getOppositeEffect() {

@@ -111,8 +111,8 @@ public class TemperatureUtil
 	 * @param temperature Temperature value to be added to the player
 	 * @param uuid Uuid of the modifier, necessary to remove the modifier when not used anymore
 	 */
-	public static void addTemperatureModifier(Player player, double temperature, UUID uuid) {
-		internal.addTemperatureModifier(player, temperature, uuid);
+	public static void addTemperatureModifier(Player player, double temperature, ResourceLocation id) {
+		internal.addTemperatureModifier(player, temperature, id);
 	}
 
 	/**
@@ -121,8 +121,8 @@ public class TemperatureUtil
 	 * @param resistance Heat resistance value to be added to the player
 	 * @param uuid Uuid of the modifier, necessary to remove the modifier when not used anymore
 	 */
-	public static void addHeatResistanceModifier(Player player, double resistance, UUID uuid) {
-		internal.addHeatResistanceModifier(player, resistance, uuid);
+	public static void addHeatResistanceModifier(Player player, double resistance, ResourceLocation id) {
+		internal.addHeatResistanceModifier(player, resistance, id);
 	}
 
 	/**
@@ -131,8 +131,8 @@ public class TemperatureUtil
 	 * @param resistance Cold resistance value to be added to the player
 	 * @param uuid Uuid of the modifier, necessary to remove the modifier when not used anymore
 	 */
-	public static void addColdResistanceModifier(Player player, double resistance, UUID uuid) {
-		internal.addColdResistanceModifier(player, resistance, uuid);
+	public static void addColdResistanceModifier(Player player, double resistance, ResourceLocation id) {
+		internal.addColdResistanceModifier(player, resistance, id);
 	}
 
 	/**
@@ -141,8 +141,8 @@ public class TemperatureUtil
 	 * @param resistance Thermal resistance value to be added to the player
 	 * @param uuid Uuid of the modifier, necessary to remove the modifier when not used anymore
 	 */
-	public static void addThermalResistanceModifier(Player player, double resistance, UUID uuid) {
-		internal.addThermalResistanceModifier(player, resistance, uuid);
+	public static void addThermalResistanceModifier(Player player, double resistance, ResourceLocation id) {
+		internal.addThermalResistanceModifier(player, resistance, id);
 	}
 
 	/**

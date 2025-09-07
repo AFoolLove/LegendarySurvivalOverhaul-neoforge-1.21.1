@@ -2,6 +2,8 @@ package sfiomn.legendarysurvivaloverhaul.util;
 
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import sfiomn.legendarysurvivaloverhaul.api.bodydamage.IBodyDamageCapability;
+import sfiomn.legendarysurvivaloverhaul.common.capabilities.ModCapabilities;
 import sfiomn.legendarysurvivaloverhaul.common.capabilities.bodydamage.BodyDamageCapability;
 import sfiomn.legendarysurvivaloverhaul.common.capabilities.bodydamage.BodyDamageProvider;
 import sfiomn.legendarysurvivaloverhaul.common.capabilities.food.FoodCapability;
@@ -15,6 +17,7 @@ import sfiomn.legendarysurvivaloverhaul.common.capabilities.thirst.ThirstCapabil
 import sfiomn.legendarysurvivaloverhaul.common.capabilities.thirst.ThirstProvider;
 import sfiomn.legendarysurvivaloverhaul.common.capabilities.wetness.WetnessCapability;
 import sfiomn.legendarysurvivaloverhaul.common.capabilities.wetness.WetnessProvider;
+import sfiomn.legendarysurvivaloverhaul.registry.AttributeTypeRegistry;
 
 /**
  * Helper functions for quickly getting player capabilities.
@@ -31,7 +34,7 @@ public final class CapabilityUtil
 	 */
 	public static TemperatureCapability getTempCapability(Player player)
 	{
-		return player.getCapability(TemperatureProvider.TEMPERATURE_CAPABILITY).orElse(new TemperatureCapability());
+		return player.getData(AttributeTypeRegistry.TEMPERATURE);
 	}
 
 	/**
@@ -41,7 +44,7 @@ public final class CapabilityUtil
 	 */
 	public static TemperatureItemCapability getTempItemCapability(ItemStack itemStack)
 	{
-		return itemStack.getCapability(TemperatureItemCapability.TemperatureItemProvider.TEMPERATURE_ITEM_CAPABILITY).orElse(new TemperatureItemCapability());
+		return itemStack.getCapability(TemperatureItemCapability.TemperatureItemProvider.TEMPERATURE_ITEM_CAPABILITY);
 	}
 
 	/**
@@ -51,7 +54,7 @@ public final class CapabilityUtil
 	 */
 	public static HealthCapability getHealthCapability(Player player)
 	{
-		return player.getCapability(HealthProvider.HEALTH_CAPABILITY).orElse(new HealthCapability());
+		return player.getData(AttributeTypeRegistry.HEALTH);
 	}
 
 	/**
@@ -61,7 +64,7 @@ public final class CapabilityUtil
 	 */
 	public static WetnessCapability getWetnessCapability(Player player)
 	{
-		return player.getCapability(WetnessProvider.WETNESS_CAPABILITY).orElse(new WetnessCapability());
+		return player.getData(AttributeTypeRegistry.WETNESS);
 	}
 
 	/**
@@ -71,7 +74,7 @@ public final class CapabilityUtil
 	 */
 	public static ThirstCapability getThirstCapability(Player player)
 	{
-		return player.getCapability(ThirstProvider.THIRST_CAPABILITY).orElse(new ThirstCapability());
+		return player.getData(AttributeTypeRegistry.THIRST);
 	}
 
 	/**
@@ -81,7 +84,7 @@ public final class CapabilityUtil
 	 */
 	public static FoodCapability getFoodCapability(Player player)
 	{
-		return player.getCapability(FoodProvider.FOOD_CAPABILITY).orElse(new FoodCapability());
+		return player.getData(AttributeTypeRegistry.FOOD);
 	}
 
 	/**
@@ -91,6 +94,6 @@ public final class CapabilityUtil
 	 */
 	public static BodyDamageCapability getBodyDamageCapability(Player player)
 	{
-		return player.getCapability(BodyDamageProvider.BODY_DAMAGE_CAPABILITY).orElse(new BodyDamageCapability());
+		return player.getData(AttributeTypeRegistry.BODY_DAMAGE);
 	}
 }

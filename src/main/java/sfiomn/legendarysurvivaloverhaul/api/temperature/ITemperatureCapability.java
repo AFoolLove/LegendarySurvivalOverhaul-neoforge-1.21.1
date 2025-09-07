@@ -2,7 +2,7 @@ package sfiomn.legendarysurvivaloverhaul.api.temperature;
 
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.event.TickEvent;
+import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 
 import java.util.List;
 
@@ -33,7 +33,7 @@ public interface ITemperatureCapability
 	 * @param world
 	 * @param phase
 	 */
-	public void tickUpdate(Player player, Level world, TickEvent.Phase phase);
+	public void tickUpdate(Player player, Level world, PlayerTickEvent phase);
 
 	/**
 	 * (Don't use this!) <br>
@@ -41,7 +41,7 @@ public interface ITemperatureCapability
 	 * @param player
 	 * @param phase
 	 */
-	public void tickClient(Player player, TickEvent.Phase phase);
+	public void tickClient(Player player, PlayerTickEvent phase);
 	
 	/**
 	 * (Don't use this!) <br>

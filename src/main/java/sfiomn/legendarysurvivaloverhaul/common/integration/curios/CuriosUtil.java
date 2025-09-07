@@ -6,33 +6,29 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.eventbus.api.Event;
-import net.minecraftforge.fml.loading.FMLLoader;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.fml.loading.FMLLoader;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.common.util.TriState;
 import sfiomn.legendarysurvivaloverhaul.LegendarySurvivalOverhaul;
 import top.theillusivec4.curios.api.CuriosApi;
 import top.theillusivec4.curios.api.SlotContext;
+import top.theillusivec4.curios.api.event.CurioCanUnequipEvent;
 import top.theillusivec4.curios.api.type.capability.ICuriosItemHandler;
 import top.theillusivec4.curios.api.type.inventory.ICurioStacksHandler;
 import top.theillusivec4.curios.api.type.inventory.IDynamicStackHandler;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
+import java.util.Optional;
 
 public class CuriosUtil {
     public static boolean isThermometerEquipped = false;
 
     public static boolean isCurioItemEquipped(Player player, Item item) {
         if (LegendarySurvivalOverhaul.curiosLoaded) {
-            LazyOptional<ICuriosItemHandler> curiosInventory = CuriosApi.getCuriosInventory(player);
+            Optional<ICuriosItemHandler> curiosInventory = CuriosApi.getCuriosInventory(player);
 
-            if (curiosInventory.isPresent() && curiosInventory.resolve().isPresent()) {
-                return curiosInventory.resolve().get().isEquipped(item);
-            }
-            return false;
+            return curiosInventory.map(iCuriosItemHandler -> iCuriosItemHandler.isEquipped(item)).orElse(false);
         } else {
             return player.getItemInHand(InteractionHand.MAIN_HAND).is(item) ||
                     player.getItemInHand(InteractionHand.OFF_HAND).is(item);
@@ -47,10 +43,10 @@ public class CuriosUtil {
     public static boolean equipCurio(Player player, ItemStack stack, InteractionHand hand) {
         if (LegendarySurvivalOverhaul.curiosLoaded) {
 
-            LazyOptional<ICuriosItemHandler> curiosInventory = CuriosApi.getCuriosInventory(player);
+            Optional<ICuriosItemHandler> curiosInventory = CuriosApi.getCuriosInventory(player);
 
-            if (curiosInventory.isPresent() && curiosInventory.resolve().isPresent()) {
-                Map<String, ICurioStacksHandler> curios = curiosInventory.resolve().get().getCurios();
+            if (curiosInventory.isPresent()) {
+                Map<String, ICurioStacksHandler> curios = curiosInventory.get().getCurios();
                 Tuple<IDynamicStackHandler, SlotContext> firstSlot = null;
 
                 for (Map.Entry<String, ICurioStacksHandler> entry : curios.entrySet()) {
@@ -73,21 +69,31 @@ public class CuriosUtil {
                             }
 
                             if (firstSlot == null) {
+//                                try {
+//                                    Class<?> curioUnequipEventClass = Class.forName("top.theillusivec4.curios.api.event.CurioCanUnequipEvent");
+//                                    Constructor<?> constructor = curioUnequipEventClass.getConstructor(ItemStack.class, SlotContext.class);
+//                                    Object event = constructor.newInstance(stack, slotContext);
+//
+//                                    if (event instanceof Event unequipEvent) {
+//                                        NeoForge.EVENT_BUS.post(unequipEvent);
+//                                        Event.Result result = unequipEvent.getResult();
+//                                        if (result != Event.Result.DENY && stackHandler.extractItem(ix, stack.getMaxStackSize(), true).getCount() == stack.getCount()) {
+//                                            firstSlot = new Tuple<>(stackHandler, slotContext);
+//                                        }
+//                                    }
+//                                } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException |
+//                                         InvocationTargetException | InstantiationException e) {
+//                                    return false;
+//                                }
                                 try {
-                                    Class<?> curioUnequipEventClass = Class.forName("top.theillusivec4.curios.api.event.CurioUnequipEvent");
-                                    Constructor<?> constructor = curioUnequipEventClass.getConstructor(ItemStack.class, SlotContext.class);
-                                    Object event = constructor.newInstance(stack, slotContext);
-
-                                    if (event instanceof Event unequipEvent) {
-                                        MinecraftForge.EVENT_BUS.post(unequipEvent);
-                                        Event.Result result = unequipEvent.getResult();
-                                        if (result != Event.Result.DENY && stackHandler.extractItem(ix, stack.getMaxStackSize(), true).getCount() == stack.getCount()) {
+                                    CurioCanUnequipEvent canUnequipEvent = new CurioCanUnequipEvent(stack, slotContext);
+                                    NeoForge.EVENT_BUS.post(canUnequipEvent);
+                                    TriState unequipResult = canUnequipEvent.getUnequipResult();
+                                    if (!unequipResult.isTrue() && stackHandler.extractItem(ix, stack.getMaxStackSize(), true).getCount() == stack.getCount()) {
                                             firstSlot = new Tuple<>(stackHandler, slotContext);
-                                        }
                                     }
-                                } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException |
-                                         InvocationTargetException | InstantiationException e) {
-                                    return false;
+                                } catch(Exception ignored){
+
                                 }
                             }
                         }

@@ -1,5 +1,7 @@
 package sfiomn.legendarysurvivaloverhaul.api.bodydamage;
 
+import net.minecraft.core.Holder;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.player.Player;
@@ -12,7 +14,7 @@ public interface IBodyDamageUtil
 {
     void applyConsumableHealing(Player player, ItemStack itemStack, boolean itemAlreadyConsumed);
 
-    List<Pair<MobEffect, Integer>> getEffects(MalusBodyPartEnum bodyPart, float headHealthRatio);
+    List<Pair<Holder<MobEffect>, Integer>> getEffects(MalusBodyPartEnum bodyPart, float headHealthRatio);
 
     MobEffectInstance getPlayerPassiveLimbRegenerationEffect(Player player);
 
