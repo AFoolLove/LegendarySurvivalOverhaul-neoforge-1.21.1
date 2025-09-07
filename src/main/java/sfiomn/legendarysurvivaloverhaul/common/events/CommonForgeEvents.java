@@ -325,11 +325,8 @@ public class CommonForgeEvents {
         if (player.level().isClientSide)
             return;
 
-        DamageContainer container = event.getContainer();
-
         if (shouldApplyHealthOverhaul(player)) {
-            float armor = event.getContainer().getReduction(DamageContainer.Reduction.ARMOR);
-            container.setReduction(DamageContainer.Reduction.ARMOR, HealthUtil.hurtPlayer(player, armor));
+            event.setNewDamage(HealthUtil.hurtPlayer(player, event.getNewDamage()));
         }
 
         if (shouldApplyLocalizedBodyDamage(player)) {
