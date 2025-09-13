@@ -49,10 +49,10 @@ public class ItemRegistry {
 		}
 	});
 
-	public static final DeferredItem<ArmorItem> SNOW_HELMET = ITEMS.register("snow_helmet", () -> new ArmorItem(SNOW, ArmorItem.Type.HELMET, new Item.Properties()));
-	public static final DeferredItem<ArmorItem> SNOW_CHEST = ITEMS.register("snow_chestplate", () -> new ArmorItem(SNOW, ArmorItem.Type.CHESTPLATE, new Item.Properties()));
-	public static final DeferredItem<ArmorItem> SNOW_LEGGINGS = ITEMS.register("snow_leggings", () -> new ArmorItem(SNOW, ArmorItem.Type.LEGGINGS, new Item.Properties()));
-	public static final DeferredItem<ArmorItem> SNOW_BOOTS = ITEMS.register("snow_boots", () -> new ArmorItem(SNOW, ArmorItem.Type.BOOTS, new Item.Properties()) {
+	public static final DeferredItem<ArmorItem> SNOW_HELMET = ITEMS.register("snow_helmet", () -> new ArmorItem(SNOW, ArmorItem.Type.HELMET, new Item.Properties().stacksTo(1)));
+	public static final DeferredItem<ArmorItem> SNOW_CHEST = ITEMS.register("snow_chestplate", () -> new ArmorItem(SNOW, ArmorItem.Type.CHESTPLATE, new Item.Properties().stacksTo(1)));
+	public static final DeferredItem<ArmorItem> SNOW_LEGGINGS = ITEMS.register("snow_leggings", () -> new ArmorItem(SNOW, ArmorItem.Type.LEGGINGS, new Item.Properties().stacksTo(1)));
+	public static final DeferredItem<ArmorItem> SNOW_BOOTS = ITEMS.register("snow_boots", () -> new ArmorItem(SNOW, ArmorItem.Type.BOOTS, new Item.Properties().stacksTo(1)) {
 		@Override
 		public boolean canWalkOnPowderedSnow(ItemStack stack, LivingEntity wearer) {
 			return true;
@@ -60,10 +60,10 @@ public class ItemRegistry {
 	});
 //	public static final DeferredItem<ArmorItem> SNOW_BODY = ITEMS.register("snow_body", () -> new ArmorItem(SNOW, ArmorItem.Type.BODY, new Item.Properties()));
 
-	public static final DeferredItem<ArmorItem> DESERT_HELMET = ITEMS.register("desert_helmet", () -> new ArmorItem(DESERT, ArmorItem.Type.HELMET, new Item.Properties()));
-	public static final DeferredItem<ArmorItem> DESERT_CHEST = ITEMS.register("desert_chestplate", () -> new ArmorItem(DESERT, ArmorItem.Type.CHESTPLATE, new Item.Properties()));
-	public static final DeferredItem<ArmorItem> DESERT_LEGGINGS = ITEMS.register("desert_leggings", () -> new ArmorItem(DESERT, ArmorItem.Type.LEGGINGS, new Item.Properties()));
-	public static final DeferredItem<ArmorItem> DESERT_BOOTS = ITEMS.register("desert_boots", () -> new ArmorItem(DESERT, ArmorItem.Type.BOOTS, new Item.Properties()));
+	public static final DeferredItem<ArmorItem> DESERT_HELMET = ITEMS.register("desert_helmet", () -> new ArmorItem(DESERT, ArmorItem.Type.HELMET, new Item.Properties().stacksTo(1)));
+	public static final DeferredItem<ArmorItem> DESERT_CHEST = ITEMS.register("desert_chestplate", () -> new ArmorItem(DESERT, ArmorItem.Type.CHESTPLATE, new Item.Properties().stacksTo(1)));
+	public static final DeferredItem<ArmorItem> DESERT_LEGGINGS = ITEMS.register("desert_leggings", () -> new ArmorItem(DESERT, ArmorItem.Type.LEGGINGS, new Item.Properties().stacksTo(1)));
+	public static final DeferredItem<ArmorItem> DESERT_BOOTS = ITEMS.register("desert_boots", () -> new ArmorItem(DESERT, ArmorItem.Type.BOOTS, new Item.Properties().stacksTo(1)));
 //	public static final DeferredItem<ArmorItem> DESERT_BODY = ITEMS.register("desert_body", () -> new ArmorItem(DESERT, ArmorItem.Type.BODY, new Item.Properties()));
 
 	public static final DeferredItem<CoatItem> COOLING_COAT_1 = ITEMS.register("cooling_coat_1", () -> new CoatItem(CoatEnum.COOLING_1, new Item.Properties().rarity(Rarity.COMMON)));
