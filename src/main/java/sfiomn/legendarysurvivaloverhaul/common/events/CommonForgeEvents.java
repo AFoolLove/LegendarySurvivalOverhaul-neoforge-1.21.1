@@ -88,9 +88,9 @@ public class CommonForgeEvents {
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onItemUse(PlayerInteractEvent.RightClickItem event) {
-        LivingEntity entity = event.getEntity();
+        Player player = event.getEntity();
 
-        if (!(entity instanceof Player player) || event.getHand() != event.getEntity().getUsedItemHand())
+        if (player == null || event.getHand() != event.getEntity().getUsedItemHand())
             return;
 
         ItemStack usedItemStack = event.getItemStack();
@@ -111,6 +111,13 @@ public class CommonForgeEvents {
             }
             BodyDamageUtil.applyConsumableHealing(player, usedItemStack, true);
         }
+
+        //if (usedItemStack.isEdible() && !player.getFoodData().needsFood()) {
+        //player.startUsingItem(player.getUsedItemHand());
+        //}
+    }
+
+    public static void onUseItem(LivingEntityUseItemEvent.Start event) {
     }
 
     @SubscribeEvent

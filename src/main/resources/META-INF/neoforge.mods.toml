@@ -23,7 +23,7 @@ issueTrackerURL="https://github.com/AFoolLove/LegendarySurvivalOverhaul-neoforge
 modId="legendarysurvivaloverhaul" #mandatory
 
 # The version number of the mod
-version="2.3.22" #mandatory
+version="2.3.22.1" #mandatory
 
 # A display name for the mod
 displayName="Legendary Survival Overhaul" #mandatory

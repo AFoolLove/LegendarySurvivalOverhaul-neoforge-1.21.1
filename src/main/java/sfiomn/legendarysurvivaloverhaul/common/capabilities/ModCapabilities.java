@@ -193,10 +193,9 @@ public class ModCapabilities
 
 		if (event.isWasDeath())
 		{
-			if (Config.Baked.localizedBodyDamageEnabled) {
-				sendBodyDamageUpdate(player);
-				BodyDamageUtil.updatePlayerBrokenHeartAttribute(player);
-			}
+            if (Config.Baked.localizedBodyDamageEnabled && Config.Baked.healthOverhaulEnabled) {
+                BodyDamageUtil.updatePlayerBrokenHeartAttribute(player);
+            }
 
 			if (Config.Baked.temperatureEnabled)
 				player.getPersistentData().putBoolean("tempImmuneOnSpawn", orig.getPersistentData().getBoolean("tempImmuneOnSpawn"));
@@ -218,7 +217,6 @@ public class ModCapabilities
 					HealthUtil.updatePlayerMaxHealthAttribute(player);
 
 				player.setHealth(player.getMaxHealth());
-				sendHealthUpdate(player);
 			}
 		}
 		else

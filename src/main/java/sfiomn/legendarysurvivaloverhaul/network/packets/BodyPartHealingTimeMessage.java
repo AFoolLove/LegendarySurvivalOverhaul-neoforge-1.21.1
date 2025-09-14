@@ -99,7 +99,7 @@ public class BodyPartHealingTimeMessage implements CustomPacketPayload
 
         if (jhc != null) {
             if (shouldApplyEffect)
-                player.addEffect(new MobEffectInstance(MobEffectRegistry.RECOVERY, jhc.recoveryEffectDuration, jhc.recoveryEffectAmplifier, false, true, true));
+                player.addEffect(new MobEffectInstance(MobEffectRegistry.RECOVERY, jhc.recoveryEffectDuration, jhc.recoveryEffectAmplifier, false, false, true));
             BodyDamageUtil.applyHealingTimeBodyPart(player, bodyPartEnum, jhc.healingValue, jhc.healingTime);
         }
     }
