@@ -3,7 +3,6 @@ package sfiomn.legendarysurvivaloverhaul.config;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.fml.ModContainer;
-import net.neoforged.fml.ModLoadingContext;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.neoforge.common.ModConfigSpec;
 import org.apache.commons.lang3.tuple.Pair;
@@ -1093,6 +1092,7 @@ public class Config
 		public final ModConfigSpec.BooleanValue showHydrationTooltip;
 		public final ModConfigSpec.BooleanValue mergeHydrationAndSaturationTooltip;
 		public final ModConfigSpec.BooleanValue thirstSaturationDisplayed;
+		public final ModConfigSpec.BooleanValue thirstExhaustionDisplayed;
 		public final ModConfigSpec.BooleanValue lowHydrationEffect;
 		public final ModConfigSpec.BooleanValue showHydrationBar;
 		public final ModConfigSpec.BooleanValue showDrinkPreview;
@@ -1194,6 +1194,7 @@ public class Config
 			builder.pop();
 
 			builder.push("thirst");
+
 			builder.push("tooltip");
 			showHydrationTooltip = builder
 					.comment(" If enabled, show the hydration values in the item tooltip.")
@@ -1202,9 +1203,13 @@ public class Config
 					.comment(" If enabled, show the hydration and the saturation values on the same line in the tooltip.")
 					.define("Merge Hydration And Saturation Tooltip", true);
 			builder.pop();
+
 			thirstSaturationDisplayed = builder
 					.comment(" Whether the Thirst Saturation is displayed or not.")
 					.define("Render the thirst saturation", true);
+			thirstExhaustionDisplayed = builder
+					.comment(" Whether the Thirst Exhaustion is displayed or not (grey bar behind the hydration bar).")
+					.define("Render the thirst exhaustion", true);
 			lowHydrationEffect = builder
 					.comment(" If enabled, player's vision will become blurry when running low on hydration.")
 					.define("Low Thirst Effect", true);
@@ -1505,6 +1510,7 @@ public class Config
 		public static boolean showHydrationTooltip;
 		public static boolean mergeHydrationAndSaturationTooltip;
 		public static boolean thirstSaturationDisplayed;
+		public static boolean thirstExhaustionDisplayed;
 		public static boolean lowHydrationEffect;
 		public static boolean showHydrationBar;
 		public static boolean showDrinkPreview;
@@ -1784,6 +1790,7 @@ public class Config
 				bodyDamageIndicatorRenderHealthLimit = CLIENT.bodyDamageIndicatorRenderHealthLimit.get();
 
 				thirstSaturationDisplayed = CLIENT.thirstSaturationDisplayed.get();
+				thirstExhaustionDisplayed = CLIENT.thirstExhaustionDisplayed.get();
 				showHydrationTooltip = CLIENT.showHydrationTooltip.get();
 				mergeHydrationAndSaturationTooltip = CLIENT.mergeHydrationAndSaturationTooltip.get();
 				lowHydrationEffect = CLIENT.lowHydrationEffect.get();

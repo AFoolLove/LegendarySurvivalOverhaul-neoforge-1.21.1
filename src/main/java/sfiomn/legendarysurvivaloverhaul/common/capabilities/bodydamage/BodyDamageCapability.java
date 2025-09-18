@@ -41,6 +41,7 @@ public class BodyDamageCapability implements IBodyDamageCapability, INBTSerializ
 
 	// Unsaved data
 	private boolean hasHeadache;
+    private int headacheAmplifier;
 	private boolean hasFirstAidSupplies;
 	private boolean hasFirstAidSuppliesBoosted;
 	private MobEffectInstance passiveLimbRegenerationEffects;
@@ -60,6 +61,7 @@ public class BodyDamageCapability implements IBodyDamageCapability, INBTSerializ
 	public void init()
 	{
 		this.hasHeadache = false;
+        this.headacheAmplifier = 0;
 		this.hasFirstAidSupplies = false;
 		this.hasFirstAidSuppliesBoosted = false;
 		this.passiveLimbRegenerationEffects = null;
@@ -179,13 +181,26 @@ public class BodyDamageCapability implements IBodyDamageCapability, INBTSerializ
 			updateBrokenHearts(player);
 		}
 
-		if (player.hasEffect(MobEffectRegistry.HEADACHE)) {
-			if (this.headacheTimer-- < 0) {
-				applyHeadache(player, Objects.requireNonNull(player.getEffect(MobEffectRegistry.HEADACHE)).getAmplifier());
-			}
-		} else {
-			this.headacheTimer = 0;
-		}
+        if (updateTickTimer % 10 == 0) {
+            this.hasHeadache = player.hasEffect(MobEffectRegistry.HEADACHE);
+            this.headacheAmplifier = this.hasHeadache ? Objects.requireNonNull(player.getEffect(MobEffectRegistry.HEADACHE)).getAmplifier() : 0;
+            this.hasFirstAidSupplies = CuriosUtil.isCurioItemEquipped(player, ItemRegistry.FIRST_AID_SUPPLIES.get());
+            if (hasFirstAidSupplies) {
+                this.hasFirstAidSuppliesBoosted = BodyDamageUtil.hasPlayerFirstAidSuppliesBoostingEffect(player);
+            } else {
+                this.passiveLimbRegenerationEffects = BodyDamageUtil.getPlayerPassiveLimbRegenerationEffect(player);
+                this.passiveLimbRegenerationEnabled = this.passiveLimbRegenerationEffects != null ||
+                        (Config.Baked.passiveLimbRegenerationOnFullHealth && HealthUtil.getPlayerStableMaxHealth(player) == player.getHealth());
+            }
+        }
+
+        if (this.hasHeadache) {
+            if (this.headacheTimer-- < 0) {
+                applyHeadache(player, this.headacheAmplifier);
+            }
+        } else {
+            this.headacheTimer = 0;
+        }
 
 		if (this.hasFirstAidSupplies) {
 			boolean boostedHealingTickTimer = false;
