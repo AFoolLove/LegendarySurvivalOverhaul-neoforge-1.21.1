@@ -16,7 +16,6 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.entity.EquipmentSlotGroup;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -28,9 +27,6 @@ import net.minecraft.world.level.storage.PrimaryLevelData;
 import net.neoforged.api.distmarker.Dist;
 
 import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.client.resources.NeoForgeSplashHooks;
-import net.neoforged.neoforge.common.damagesource.DamageContainer;
-import net.neoforged.neoforge.event.EventHooks;
 import net.neoforged.neoforge.event.ItemAttributeModifierEvent;
 import net.neoforged.neoforge.event.OnDatapackSyncEvent;
 import net.neoforged.neoforge.event.entity.living.*;
@@ -38,10 +34,8 @@ import net.neoforged.neoforge.event.entity.player.*;
 import net.neoforged.neoforge.event.level.BlockEvent;
 import net.neoforged.neoforge.event.level.LevelEvent;
 import net.neoforged.neoforge.event.level.SleepFinishedTimeEvent;
-import net.neoforged.bus.api.Event;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.loading.FMLEnvironment;
 
 import net.neoforged.neoforge.event.entity.living.LivingEntityUseItemEvent;
@@ -111,13 +105,6 @@ public class CommonForgeEvents {
             }
             BodyDamageUtil.applyConsumableHealing(player, usedItemStack, true);
         }
-
-        //if (usedItemStack.isEdible() && !player.getFoodData().needsFood()) {
-        //player.startUsingItem(player.getUsedItemHand());
-        //}
-    }
-
-    public static void onUseItem(LivingEntityUseItemEvent.Start event) {
     }
 
     @SubscribeEvent

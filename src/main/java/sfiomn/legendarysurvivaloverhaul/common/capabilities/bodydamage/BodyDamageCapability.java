@@ -12,7 +12,6 @@ import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.common.util.INBTSerializable;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.commons.lang3.tuple.Triple;
 import org.jetbrains.annotations.UnknownNullability;
 import sfiomn.legendarysurvivaloverhaul.api.bodydamage.BodyDamageUtil;
 import sfiomn.legendarysurvivaloverhaul.api.bodydamage.BodyPartEnum;
@@ -51,7 +50,7 @@ public class BodyDamageCapability implements IBodyDamageCapability, INBTSerializ
 	private float playerMaxHealth;
 	private boolean manualDirty;
 	private int packetTimer;
-	private List<Triple<MalusBodyPartEnum, Holder<MobEffect>, Integer>> malus;
+	private Map<Holder<MobEffect>, Integer> malus;
 
 	public BodyDamageCapability()
 	{
@@ -73,7 +72,7 @@ public class BodyDamageCapability implements IBodyDamageCapability, INBTSerializ
 		this.healingTickTimer = 0;
 
 		this.bodyParts = new HashMap<>();
-		this.malus = new ArrayList<>();
+		this.malus = new HashMap<>();
 
 		this.bodyParts.put(BodyPartEnum.HEAD, new BodyPart(BodyPartEnum.HEAD, (float) Config.Baked.headPartHealth));
 		this.bodyParts.put(BodyPartEnum.RIGHT_ARM, new BodyPart(BodyPartEnum.RIGHT_ARM, (float) Config.Baked.armsPartHealth));
@@ -137,32 +136,35 @@ public class BodyDamageCapability implements IBodyDamageCapability, INBTSerializ
 			}
 
 			// Refresh all the malus a player should have
-			List<Triple<MalusBodyPartEnum, Holder<MobEffect>, Integer>> newMalus = new ArrayList<>();
-			for (MalusBodyPartEnum malusBodyPart: MalusBodyPartEnum.values()) {
-				List<Pair<Holder<MobEffect>, Integer>> malusEffects = new ArrayList<>();
-				if (!player.hasEffect(MobEffectRegistry.PAINKILLER))
-					malusEffects = BodyDamageUtil.getEffects(malusBodyPart, getHealthRatioForMalusBodyPart(malusBodyPart));
-				for (Triple<MalusBodyPartEnum, Holder<MobEffect>, Integer> bodyPartMalusEffect: this.malus) {
-					if (bodyPartMalusEffect.getLeft() == malusBodyPart) {
-						Pair<Holder<MobEffect>, Integer> oldEffect = Pair.of(bodyPartMalusEffect.getMiddle(), bodyPartMalusEffect.getRight());
-						if (!malusEffects.contains(oldEffect)) {
-							player.removeEffect(oldEffect.getLeft());
-							if (oldEffect.getLeft() == MobEffectRegistry.HEADACHE.get())
-								player.removeEffect(MobEffects.BLINDNESS);
-						}
-					}
-				}
-				for (Pair<Holder<MobEffect>, Integer> malusEffect: malusEffects) {
-					newMalus.add(Triple.of(malusBodyPart, malusEffect.getLeft(), malusEffect.getRight()));
-				}
-			}
+            Map<Holder<MobEffect>, Integer> newMalus = new HashMap<>();
+            for (MalusBodyPartEnum malusBodyPart: MalusBodyPartEnum.values()) {
+                List<Pair<Holder<MobEffect>, Integer>> malusEffects = new ArrayList<>();
+                if (!player.hasEffect(MobEffectRegistry.PAINKILLER))
+                    malusEffects = BodyDamageUtil.getEffects(malusBodyPart, getHealthRatioForMalusBodyPart(malusBodyPart));
+
+                for (Pair<Holder<MobEffect>, Integer> malusEffect: malusEffects) {
+                    Integer alreadyAppliedEffectAmplifier = newMalus.get(malusEffect.getLeft());
+                    if (alreadyAppliedEffectAmplifier == null || alreadyAppliedEffectAmplifier < malusEffect.getRight())
+                        newMalus.put(malusEffect.getLeft(), malusEffect.getRight());
+                }
+            }
+
+            // Clean old effects that shouldn't be applied anymore
+            for (Map.Entry<Holder<MobEffect>, Integer> bodyPartMalusEffect: this.malus.entrySet()) {
+                Holder<MobEffect> oldEffect = bodyPartMalusEffect.getKey();
+                MobEffectInstance playerOldEffect = player.getEffect(oldEffect);
+                if (playerOldEffect != null && (!newMalus.containsKey(oldEffect) || playerOldEffect.getAmplifier() > bodyPartMalusEffect.getValue())) {
+                    player.removeEffect(oldEffect);
+                    if (oldEffect == MobEffectRegistry.HEADACHE.get())
+                        player.removeEffect(MobEffects.BLINDNESS);
+                }
+            }
 
 			this.malus = newMalus;
 
 			// Assign all malus effect to the player
-			for (Triple<MalusBodyPartEnum, Holder<MobEffect>, Integer> malusEffect: this.malus) {
-				if (!player.hasEffect(malusEffect.getMiddle()))
-					player.addEffect(new MobEffectInstance(malusEffect.getMiddle(), -1, malusEffect.getRight(), false, false, true));
+			for (Map.Entry<Holder<MobEffect>, Integer> malusEffect: this.malus.entrySet()) {
+				player.addEffect(new MobEffectInstance(malusEffect.getKey(), -1, malusEffect.getValue(), false, false, true));
 			}
 
 			// Heal each body limb of the player
