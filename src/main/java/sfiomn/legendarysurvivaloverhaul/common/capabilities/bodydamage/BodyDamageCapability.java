@@ -12,6 +12,7 @@ import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.common.util.INBTSerializable;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.tuple.Triple;
 import org.jetbrains.annotations.UnknownNullability;
 import sfiomn.legendarysurvivaloverhaul.api.bodydamage.BodyDamageUtil;
 import sfiomn.legendarysurvivaloverhaul.api.bodydamage.BodyPartEnum;
@@ -39,8 +40,7 @@ public class BodyDamageCapability implements IBodyDamageCapability, INBTSerializ
 	private float healingTickTimer;
 
 	// Unsaved data
-	private boolean hasHeadache;
-    private int headacheAmplifier;
+	private MobEffectInstance headacheEffect;
 	private boolean hasFirstAidSupplies;
 	private boolean hasFirstAidSuppliesBoosted;
 	private MobEffectInstance passiveLimbRegenerationEffects;
@@ -59,8 +59,7 @@ public class BodyDamageCapability implements IBodyDamageCapability, INBTSerializ
 
 	public void init()
 	{
-		this.hasHeadache = false;
-        this.headacheAmplifier = 0;
+		this.headacheEffect = null;
 		this.hasFirstAidSupplies = false;
 		this.hasFirstAidSuppliesBoosted = false;
 		this.passiveLimbRegenerationEffects = null;
@@ -136,29 +135,29 @@ public class BodyDamageCapability implements IBodyDamageCapability, INBTSerializ
 			}
 
 			// Refresh all the malus a player should have
-            Map<Holder<MobEffect>, Integer> newMalus = new HashMap<>();
-            for (MalusBodyPartEnum malusBodyPart: MalusBodyPartEnum.values()) {
-                List<Pair<Holder<MobEffect>, Integer>> malusEffects = new ArrayList<>();
-                if (!player.hasEffect(MobEffectRegistry.PAINKILLER))
-                    malusEffects = BodyDamageUtil.getEffects(malusBodyPart, getHealthRatioForMalusBodyPart(malusBodyPart));
+			Map<Holder<MobEffect>, Integer> newMalus = new HashMap<>();
+			for (MalusBodyPartEnum malusBodyPart: MalusBodyPartEnum.values()) {
+				List<Pair<Holder<MobEffect>, Integer>> malusEffects = new ArrayList<>();
+				if (!player.hasEffect(MobEffectRegistry.PAINKILLER))
+					malusEffects = BodyDamageUtil.getEffects(malusBodyPart, getHealthRatioForMalusBodyPart(malusBodyPart));
 
-                for (Pair<Holder<MobEffect>, Integer> malusEffect: malusEffects) {
-                    Integer alreadyAppliedEffectAmplifier = newMalus.get(malusEffect.getLeft());
-                    if (alreadyAppliedEffectAmplifier == null || alreadyAppliedEffectAmplifier < malusEffect.getRight())
-                        newMalus.put(malusEffect.getLeft(), malusEffect.getRight());
-                }
-            }
+				for (Pair<Holder<MobEffect>, Integer> malusEffect: malusEffects) {
+					Integer alreadyAppliedEffectAmplifier = newMalus.get(malusEffect.getLeft());
+					if (alreadyAppliedEffectAmplifier == null || alreadyAppliedEffectAmplifier < malusEffect.getRight())
+						newMalus.put(malusEffect.getLeft(), malusEffect.getRight());
+				}
+			}
 
-            // Clean old effects that shouldn't be applied anymore
-            for (Map.Entry<Holder<MobEffect>, Integer> bodyPartMalusEffect: this.malus.entrySet()) {
+			// Clean old effects that shouldn't be applied anymore
+			for (Map.Entry<Holder<MobEffect>, Integer> bodyPartMalusEffect: this.malus.entrySet()) {
                 Holder<MobEffect> oldEffect = bodyPartMalusEffect.getKey();
-                MobEffectInstance playerOldEffect = player.getEffect(oldEffect);
-                if (playerOldEffect != null && (!newMalus.containsKey(oldEffect) || playerOldEffect.getAmplifier() > bodyPartMalusEffect.getValue())) {
-                    player.removeEffect(oldEffect);
-                    if (oldEffect == MobEffectRegistry.HEADACHE.get())
-                        player.removeEffect(MobEffects.BLINDNESS);
-                }
-            }
+				MobEffectInstance playerOldEffect = player.getEffect(oldEffect);
+				if (playerOldEffect != null && (!newMalus.containsKey(oldEffect) || playerOldEffect.getAmplifier() > bodyPartMalusEffect.getValue())) {
+					player.removeEffect(oldEffect);
+					if (oldEffect == MobEffectRegistry.HEADACHE.get())
+						player.removeEffect(MobEffects.BLINDNESS);
+				}
+			}
 
 			this.malus = newMalus;
 
@@ -184,8 +183,7 @@ public class BodyDamageCapability implements IBodyDamageCapability, INBTSerializ
 		}
 
         if (updateTickTimer % 10 == 0) {
-            this.hasHeadache = player.hasEffect(MobEffectRegistry.HEADACHE);
-            this.headacheAmplifier = this.hasHeadache ? Objects.requireNonNull(player.getEffect(MobEffectRegistry.HEADACHE)).getAmplifier() : 0;
+            this.headacheEffect = player.getEffect(MobEffectRegistry.HEADACHE);
             this.hasFirstAidSupplies = CuriosUtil.isCurioItemEquipped(player, ItemRegistry.FIRST_AID_SUPPLIES.get());
             if (hasFirstAidSupplies) {
                 this.hasFirstAidSuppliesBoosted = BodyDamageUtil.hasPlayerFirstAidSuppliesBoostingEffect(player);
@@ -196,9 +194,9 @@ public class BodyDamageCapability implements IBodyDamageCapability, INBTSerializ
             }
         }
 
-        if (this.hasHeadache) {
+        if (this.headacheEffect != null) {
             if (this.headacheTimer-- < 0) {
-                applyHeadache(player, this.headacheAmplifier);
+                applyHeadache(player, this.headacheEffect.getAmplifier());
             }
         } else {
             this.headacheTimer = 0;

@@ -16,10 +16,10 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.EquipmentSlotGroup;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.LevelData;
@@ -197,67 +197,62 @@ public class CommonForgeEvents {
         if (FMLEnvironment.dist == Dist.CLIENT)
             if(Minecraft.getInstance().level == null) return;
 
-        for (ItemAttributeModifiers.Entry entry : event.getModifiers()) {
-            ItemStack itemStack = event.getItemStack();
-            EquipmentSlot equipmentSlot = itemStack.getEquipmentSlot();
-            if (equipmentSlot == null) {
-                continue;
+        ItemStack itemStack = event.getItemStack();
+        EquipmentSlot slot = itemStack.getEquipmentSlot();
+        if(slot != null && ItemUtil.canBeEquippedInSlot(event.getItemStack(), slot)) {
+            EquipmentSlotGroup equipmentSlotGroup = EquipmentSlotGroup.bySlot(slot);
+            if (Config.Baked.temperatureEnabled) {
+                JsonTemperatureResistance config = new JsonTemperatureResistance();
+                for (AttributeModifierBase attributeModifier : ITEM_ATTRIBUTE_MODIFIERS_REGISTRY) {
+                    config.add(attributeModifier.getItemAttributes(event.getItemStack()));
+                }
+
+                ResourceLocation modifierUuid = equipmentSlotTemperatureUuid.get(slot);
+
+                if (config.temperature != 0) {
+                    HEATING_TEMPERATURE.addModifier(event, modifierUuid, equipmentSlotGroup, Math.max(config.temperature, 0));
+                    COOLING_TEMPERATURE.addModifier(event, modifierUuid, equipmentSlotGroup, Math.min(config.temperature, 0));
+                }
+
+                if (config.heatResistance != 0)
+                    HEAT_RESISTANCE.addModifier(event, modifierUuid, equipmentSlotGroup, config.heatResistance);
+
+                if (config.coldResistance != 0)
+                    COLD_RESISTANCE.addModifier(event, modifierUuid, equipmentSlotGroup, config.coldResistance);
+
+                if (config.thermalResistance != 0)
+                    THERMAL_RESISTANCE.addModifier(event, modifierUuid, equipmentSlotGroup, config.thermalResistance);
             }
-            if (entry.slot().test(equipmentSlot)) {
 
-                if (Config.Baked.temperatureEnabled) {
-                    JsonTemperatureResistance config = new JsonTemperatureResistance();
-                    for (AttributeModifierBase attributeModifier : ITEM_ATTRIBUTE_MODIFIERS_REGISTRY) {
-                        config.add(attributeModifier.getItemAttributes(event.getItemStack()));
-                    }
+            if ((Config.Baked.localizedBodyDamageEnabled)) {
+                ResourceLocation itemRegistryName = BuiltInRegistries.ITEM.getKey(event.getItemStack().getItem());
+                JsonBodyPartResistance config = BodyDamageDataManager.getBodyResistanceItem(itemRegistryName);
 
-                    ResourceLocation modifierUuid = equipmentSlotTemperatureUuid.get(equipmentSlot);
+                if (itemRegistryName == null || config == null)
+                    return;
 
-                    if (config.temperature != 0) {
-                        HEATING_TEMPERATURE.addModifier(event, modifierUuid, entry.slot(), Math.max(config.temperature, 0));
-                        COOLING_TEMPERATURE.addModifier(event, modifierUuid, entry.slot(), Math.min(config.temperature, 0));
-                    }
+                ResourceLocation modifierUuid = equipmentSlotBodyResistanceUuid.get(slot);
 
-                    if (config.heatResistance != 0)
-                        HEAT_RESISTANCE.addModifier(event, modifierUuid, entry.slot(), config.heatResistance);
+                if (config.bodyResistance != 0)
+                    BODY_RESISTANCE.addModifier(event, modifierUuid, equipmentSlotGroup, config.bodyResistance);
 
-                    if (config.coldResistance != 0)
-                        COLD_RESISTANCE.addModifier(event, modifierUuid, entry.slot(), config.coldResistance);
+                if (config.headResistance != 0)
+                    HEAD_RESISTANCE.addModifier(event, modifierUuid, equipmentSlotGroup, config.headResistance);
 
-                    if (config.thermalResistance != 0)
-                        THERMAL_RESISTANCE.addModifier(event, modifierUuid, entry.slot(), config.thermalResistance);
-                }
+                if (config.chestResistance != 0)
+                    CHEST_RESISTANCE.addModifier(event, modifierUuid, equipmentSlotGroup, config.chestResistance);
 
-                if ((Config.Baked.localizedBodyDamageEnabled)) {
-                    ResourceLocation itemRegistryName = BuiltInRegistries.ITEM.getKey(event.getItemStack().getItem());
-                    JsonBodyPartResistance config = BodyDamageDataManager.getBodyResistanceItem(itemRegistryName);
+                if (config.rightArmResistance != 0)
+                    RIGHT_ARM_RESISTANCE.addModifier(event, modifierUuid, equipmentSlotGroup, config.rightArmResistance);
 
-                    if (itemRegistryName == null || config == null)
-                        return;
+                if (config.leftArmResistance != 0)
+                    LEFT_ARM_RESISTANCE.addModifier(event, modifierUuid, equipmentSlotGroup, config.leftArmResistance);
 
-                    ResourceLocation modifierUuid = equipmentSlotBodyResistanceUuid.get(equipmentSlot);
+                if (config.legsResistance != 0)
+                    LEGS_RESISTANCE.addModifier(event, modifierUuid, equipmentSlotGroup, config.legsResistance);
 
-                    if (config.bodyResistance != 0)
-                        BODY_RESISTANCE.addModifier(event, modifierUuid, entry.slot(), config.bodyResistance);
-
-                    if (config.headResistance != 0)
-                        HEAD_RESISTANCE.addModifier(event, modifierUuid, entry.slot(), config.headResistance);
-
-                    if (config.chestResistance != 0)
-                        CHEST_RESISTANCE.addModifier(event, modifierUuid, entry.slot(), config.chestResistance);
-
-                    if (config.rightArmResistance != 0)
-                        RIGHT_ARM_RESISTANCE.addModifier(event, modifierUuid, entry.slot(), config.rightArmResistance);
-
-                    if (config.leftArmResistance != 0)
-                        LEFT_ARM_RESISTANCE.addModifier(event, modifierUuid, entry.slot(), config.leftArmResistance);
-
-                    if (config.legsResistance != 0)
-                        LEGS_RESISTANCE.addModifier(event, modifierUuid, entry.slot(), config.legsResistance);
-
-                    if (config.feetResistance != 0)
-                        FEET_RESISTANCE.addModifier(event, modifierUuid, entry.slot(), config.feetResistance);
-                }
+                if (config.feetResistance != 0)
+                    FEET_RESISTANCE.addModifier(event, modifierUuid, equipmentSlotGroup, config.feetResistance);
             }
         }
     }
@@ -266,7 +261,7 @@ public class CommonForgeEvents {
     public static void onJump(LivingEvent.LivingJumpEvent event) {
         LivingEntity entity = event.getEntity();
         if (entity instanceof Player && shouldApplyThirst((Player) entity) && !entity.level().isClientSide) {
-            ThirstUtil.addExhaustion((Player) entity, (float) Config.Baked.onJumpThirstExhaustion);
+            ThirstUtil.addExhaustion((Player) entity, (float) Config.Baked.onJumpHydrationExhaustion);
         }
     }
 
@@ -274,7 +269,7 @@ public class CommonForgeEvents {
     public static void onBlockBreak(BlockEvent.BreakEvent event) {
         Player player = event.getPlayer();
         if (shouldApplyThirst(player) && !player.level().isClientSide && event.getState().getDestroySpeed(event.getLevel(), event.getPos()) > 0.0f) {
-            ThirstUtil.addExhaustion(player, (float) Config.Baked.onBlockBreakThirstExhaustion);
+            ThirstUtil.addExhaustion(player, (float) Config.Baked.onBlockBreakHydrationExhaustion);
         }
     }
 
@@ -284,7 +279,7 @@ public class CommonForgeEvents {
         if (shouldApplyThirst(player) && !player.level().isClientSide) {
             Entity monster = event.getTarget();
             if(monster.isAttackable()) {
-                ThirstUtil.addExhaustion(player, (float) Config.Baked.onAttackThirstExhaustion);
+                ThirstUtil.addExhaustion(player, (float) Config.Baked.onAttackHydrationExhaustion);
                 player.causeFoodExhaustion((float) Config.Baked.onAttackFoodExhaustion);
             }
         }

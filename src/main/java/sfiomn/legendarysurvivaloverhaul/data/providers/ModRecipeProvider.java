@@ -399,19 +399,19 @@ public class ModRecipeProvider extends RecipeProvider implements IConditionBuild
         ThirstUtilInternal thirstUtilInternal = new ThirstUtilInternal();
 
         ItemStack itemStack = new ItemStack(ItemRegistry.CANTEEN.get());
-        thirstUtilInternal.setThirstEnumTag(itemStack, HydrationEnum.NORMAL);
+        thirstUtilInternal.setHydrationEnumTag(itemStack, HydrationEnum.NORMAL);
         purification_smelting(consumer, Ingredient.of(itemStack), ItemRegistry.CANTEEN.get(), 1.0f, 240, "purified_canteen");
 
         itemStack = new ItemStack(ItemRegistry.LARGE_CANTEEN.get());
-        thirstUtilInternal.setThirstEnumTag(itemStack, HydrationEnum.NORMAL);
+        thirstUtilInternal.setHydrationEnumTag(itemStack, HydrationEnum.NORMAL);
         purification_smelting(consumer, Ingredient.of(itemStack), ItemRegistry.LARGE_CANTEEN.get(), 1.0f, 240, "purified_large_canteen");
 
         itemStack = new ItemStack(ItemRegistry.CANTEEN.get());
-        thirstUtilInternal.setThirstEnumTag(itemStack, HydrationEnum.NORMAL);
+        thirstUtilInternal.setHydrationEnumTag(itemStack, HydrationEnum.NORMAL);
         purification_blasting(consumer, Ingredient.of(itemStack), ItemRegistry.CANTEEN.get(), 1.0f, 80, "purified_canteen");
 
         itemStack = new ItemStack(ItemRegistry.LARGE_CANTEEN.get());
-        thirstUtilInternal.setThirstEnumTag(itemStack, HydrationEnum.NORMAL);
+        thirstUtilInternal.setHydrationEnumTag(itemStack, HydrationEnum.NORMAL);
         purification_blasting(consumer, Ingredient.of(itemStack), ItemRegistry.LARGE_CANTEEN.get(), 1.0f, 80, "purified_large_canteen");
 
         sewing(consumer, Ingredient.of(Items.STRING), Ingredient.of(ItemRegistry.ICE_FERN.get()), new ItemStack(ItemRegistry.COLD_STRING.get()), "cold_string");

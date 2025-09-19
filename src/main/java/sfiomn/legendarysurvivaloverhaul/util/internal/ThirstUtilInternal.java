@@ -3,15 +3,11 @@ package sfiomn.legendarysurvivaloverhaul.util.internal;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.tags.ItemTags;
-import net.minecraft.tags.TagKey;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.level.block.state.BlockState;
@@ -44,7 +40,7 @@ public class ThirstUtilInternal implements IThirstUtil {
     public static final String CAPACITY_TAG = LegendarySurvivalOverhaul.MOD_ID + ":HydrationCapacity";
 
     @Override
-    public void setThirstEnumTag(ItemStack stack, HydrationEnum hydrationEnum)
+    public void setHydrationEnumTag(ItemStack stack, HydrationEnum hydrationEnum)
     {
         CustomData customData = stack.get(DataComponents.CUSTOM_DATA);
         CompoundTag compound = null;
@@ -296,21 +292,21 @@ public class ThirstUtilInternal implements IThirstUtil {
     @Override
     public void deactivateThirst(Player player) {
         ThirstCapability cap = CapabilityUtil.getThirstCapability(player);
-        cap.setThirstTickTimer(-1);
+        cap.setTickTimer(-1);
         cap.setDirty();
     }
 
     @Override
     public void activateThirst(Player player) {
         ThirstCapability cap = CapabilityUtil.getThirstCapability(player);
-        if (cap.getThirstTickTimer() == -1) {
-            cap.setThirstTickTimer(0);
+        if (cap.getTickTimer() == -1) {
+            cap.setTickTimer(0);
             cap.setDirty();
         }
     }
 
     @Override
     public boolean isThirstActive(Player player) {
-        return CapabilityUtil.getThirstCapability(player).getThirstTickTimer() != -1;
+        return CapabilityUtil.getThirstCapability(player).getTickTimer() != -1;
     }
 }
