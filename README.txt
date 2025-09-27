@@ -1,7 +1,11 @@
-2.3.20.2 已知问题：
-    1. 温度系统似乎未能完全正常工作
-2.3.22.4
+2.3.23.1
+    修复装备的温度属性没有生效
+    口渴效果由blur恢复为blob2
     已同步更新内容，但未进行测试
+
+已知兼容性问题（已使用mixin解决）：
+    与 fdlib 模组一起使用时，口渴状态下的效果跟该模组冲突，会触发反复创建效果导致内存溢出(OOM)
+    在neoforge.mods.toml启用mixins即可使用该解决方法（默认未启用mixins）
 
 
 Source installation information for modders

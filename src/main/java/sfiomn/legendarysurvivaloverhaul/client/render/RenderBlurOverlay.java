@@ -14,7 +14,7 @@ import javax.annotation.Nullable;
 @OnlyIn(Dist.CLIENT)
 public class RenderBlurOverlay {
 
-    private static FocusShader focusShader;
+    public static FocusShader focusShader;
     private static final float DEFAULT_SHADER_INTENSITY = 0;
     private static final float MAX_SHADER_INTENSITY = 4;
     private static final float SHADER_INTENSITY_STEP = 0.05f;
