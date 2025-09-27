@@ -197,9 +197,8 @@ public class CommonForgeEvents {
         if (FMLEnvironment.dist == Dist.CLIENT)
             if(Minecraft.getInstance().level == null) return;
 
-        ItemStack itemStack = event.getItemStack();
-        EquipmentSlot slot = itemStack.getEquipmentSlot();
-        if(slot != null && ItemUtil.canBeEquippedInSlot(event.getItemStack(), slot)) {
+        EquipmentSlot slot = ItemUtil.getEquippableSlot(event.getItemStack());
+        if(ItemUtil.canBeEquippedInSlot(event.getItemStack(), slot)) {
             EquipmentSlotGroup equipmentSlotGroup = EquipmentSlotGroup.bySlot(slot);
             if (Config.Baked.temperatureEnabled) {
                 JsonTemperatureResistance config = new JsonTemperatureResistance();
